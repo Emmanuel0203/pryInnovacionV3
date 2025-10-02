@@ -3,6 +3,8 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 import requests
 import os
 from forms.formsLogin import LoginForm
+from flask_login import login_user
+from models.Usuario import Usuario
 
 login_bp = Blueprint("login", __name__, template_folder="templates")
 
@@ -10,7 +12,7 @@ login_bp = Blueprint("login", __name__, template_folder="templates")
 def login_view():
     form = LoginForm()
     if form.validate_on_submit():
-        email = form.email.data
+        email = form.email.data.lower() if form.email.data else form.email.data
         password = form.password.data
 
         backend_url = os.getenv("BACKEND_LOCAL_URL")  # Ej: http://localhost:5186/api
@@ -34,10 +36,10 @@ def login_view():
                 users = api_data.get("datos", [])
                 print(f"👥 Total usuarios en response['datos']: {len(users)}")
 
-                # Buscar usuario por email
+                # Buscar usuario por email (ignorando mayúsculas/minúsculas)
                 user_found = None
                 for user in users:
-                    if user.get("email") == email:
+                    if user.get("email") and user.get("email").lower() == email:
                         user_found = user
                         break
 
@@ -47,12 +49,17 @@ def login_view():
                     # Comparar contraseña
                     stored_password = user_found.get("password") or user_found.get("contrasena")
                     if stored_password == password:
-                        # Guardar en sesión con lo que tu dashboard espera
-                        session["user_email"] = email
-                        session["user_name"] = user_found.get("name") or user_found.get("nombre") or "Usuario"
-                        session["user_role"] = user_found.get("role") or user_found.get("rol") or "Usuario"
-                        session["user_id"] = user_found.get("id")
+                        usuario = Usuario(
+                            email=user_found.get("email"),
+                            password=user_found.get("password"),
+                            is_active=user_found.get("is_active", True),
+                            is_staff=user_found.get("is_staff", False),
+                            last_login=user_found.get("last_login")
+                        )
 
+                        login_user(usuario, remember=True)  # 👈 Aquí lo guarda Flask-Login
+                        # Guardar email en la sesión para compatibilidad con vistas existentes
+                        session['user_email'] = usuario.email
                         flash("¡Login exitoso! Bienvenido", "success")
                         return redirect(url_for("dashboard.index"))
                     else:

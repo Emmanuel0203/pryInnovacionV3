@@ -46,13 +46,16 @@ from extensions import login_manager
 
 
 @login_manager.user_loader
-def load_user(user_id):
+def load_user(email):
+    # Buscar usuario por email (identificador único, normalizado a minúsculas)
+    if not email:
+        return None
+    email = email.lower()
     client = APIClient("usuario")
-    result = client.get_data(where_condition=f"id_usuario = {user_id}")
+    result = client.get_data(where_condition=f"LOWER(email) = '{email}'")
     if result:
         user_data = result[0]
         return Usuario(
-            id_usuario=user_data["id_usuario"],
             email=user_data["email"],
             password=user_data["password"],
             is_active=user_data.get("is_active", True),
