@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from utils.api_client import APIClient
 from config_flask import API_CONFIG
-from forms.formsOportunidades.formsOportunidades import OportunidadForm
+from forms.formsOportunidades import OportunidadForm
 
 oportunidades_bp = Blueprint('oportunidades', __name__)
 api_client = APIClient(API_CONFIG['base_url'])

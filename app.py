@@ -1,10 +1,16 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+# app.py
+from flask import Flask, render_template, redirect, url_for
 from flask_wtf.csrf import CSRFProtect
-from datetime import datetime, timedelta
-import os
-from config_flask import FLASK_CONFIG, API_CONFIG
-from forms.formsLogin.forms import LoginForm, RegisterForm
 from dotenv import load_dotenv
+from datetime import timedelta
+from utils.api_client import APIClient
+from config_flask import API_CONFIG
+import os
+
+# 🔑 Extensiones
+from extensions import login_manager
+
+# 🔹 Blueprints
 from views.vistaLogin import login_bp
 from views.vistaIdeas import ideas_bp
 from views.vistaOportunidades import oportunidades_bp
@@ -12,43 +18,69 @@ from views.vistaSoluciones import soluciones_bp
 from views.vistaPerfil import perfil_bp
 from views.vistaDashboard import dashboard_bp
 from views.vistaMain import main_bp
-from utils.api_client import APIClient
+
+# 🔹 Configuración
+from config_flask import config
 
 # Cargar variables de entorno
 load_dotenv()
 
-# Crear la aplicación Flask
 app = Flask(__name__)
 
-# Configuración básica
-app.config.update(FLASK_CONFIG)
-
-# Configuración de CSRF
+    # CSRF
 csrf = CSRFProtect(app)
 
-# Configuración de la sesión
-app.config['SECRET_KEY'] = 'tu_clave_secreta_aqui'  # Asegura que la sesión esté encriptada
-app.config['SESSION_TYPE'] = 'filesystem'
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)
-app.config['SESSION_COOKIE_SECURE'] = False  # Para desarrollo local
+# 🔑 Cargar SECRET_KEY desde variables de entorno
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY")
 
-# Inicializar el cliente API
-api_client = APIClient(API_CONFIG['base_url'])
+if not app.config["SECRET_KEY"]:
+    raise ValueError("❌ SECRET_KEY no encontrada en las variables de entorno")
 
-# Registrar los blueprints
+    # Inicializar extensiones
+login_manager.init_app(app)
+login_manager.login_view = "login.login_view"
+login_manager.login_message = "Debes iniciar sesión para acceder a esta página."
+
+    # Definir user_loader
+from models.Usuario import Usuario
+
+from extensions import login_manager
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    client = APIClient("usuario")
+    result = client.get_data(where_condition=f"id_usuario = {user_id}")
+    if result:
+        user_data = result[0]
+        return Usuario(
+            id_usuario=user_data["id_usuario"],
+            email=user_data["email"],
+            password=user_data["password"],
+            is_active=user_data.get("is_active", True),
+            is_staff=user_data.get("is_staff", False),
+            last_login=user_data.get("last_login")
+        )
+    return None
+
+
+
+    # Registrar blueprints
 app.register_blueprint(login_bp, url_prefix='/login')
-app.register_blueprint(ideas_bp)
-app.register_blueprint(oportunidades_bp)
-app.register_blueprint(soluciones_bp)
-app.register_blueprint(perfil_bp)
-app.register_blueprint(dashboard_bp)
-app.register_blueprint(main_bp)
+app.register_blueprint(ideas_bp, url_prefix='/ideas')
+app.register_blueprint(oportunidades_bp, url_prefix='/oportunidades')
+app.register_blueprint(soluciones_bp, url_prefix='/soluciones')
+app.register_blueprint(perfil_bp, url_prefix='/perfil')
+app.register_blueprint(dashboard_bp, url_prefix='/dashboard')
+app.register_blueprint(main_bp, url_prefix='/')
 
+    # Rutas raíz / errores
 @app.route('/')
 def index():
-    if not session.get('user_email'):
+      from flask_login import current_user
+      if not current_user.is_authenticated:
         return redirect(url_for('login.login_view'))
-    return redirect(url_for('dashboard.index'))
+      return redirect(url_for('dashboard.index'))
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -58,5 +90,11 @@ def page_not_found(e):
 def internal_server_error(e):
     return render_template('error/500.html'), 500
 
+
+
+
+# =========================
+# Arranque de la app
+# =========================
 if __name__ == '__main__':
     app.run(debug=True, port=5001)
