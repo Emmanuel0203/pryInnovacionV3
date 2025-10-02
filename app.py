@@ -4,7 +4,6 @@ from flask_wtf.csrf import CSRFProtect
 from dotenv import load_dotenv
 from datetime import timedelta
 from utils.api_client import APIClient
-from config_flask import API_CONFIG
 import os
 
 # 🔑 Extensiones
@@ -19,8 +18,7 @@ from views.vistaPerfil import perfil_bp
 from views.vistaDashboard import dashboard_bp
 from views.vistaMain import main_bp
 
-# 🔹 Configuración
-from config_flask import config
+
 
 # Cargar variables de entorno
 load_dotenv()
