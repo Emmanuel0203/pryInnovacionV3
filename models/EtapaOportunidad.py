@@ -1,4 +1,4 @@
-from . import db
+from extensions import db
 
 class EtapaOportunidad(db.Model):
     __tablename__ = 'etapa_oportunidad'

@@ -1,4 +1,4 @@
-from . import db
+from extensions import db
 
 class AreaOportunidad(db.Model):
     __tablename__ = 'area_oportunidad'

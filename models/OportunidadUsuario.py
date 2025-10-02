@@ -1,5 +1,4 @@
-from . import db
-
+from extensions import db
 class OportunidadUsuario(db.Model):
     __tablename__ = 'oportunidad_usuario'
     __table_args__ = {'schema': 'public'}

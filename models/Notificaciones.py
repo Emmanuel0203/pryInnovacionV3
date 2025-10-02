@@ -1,4 +1,4 @@
-from . import db
+from extensions import db
 
 class Notificaciones(db.Model):
     __tablename__ = 'notificaciones'
