@@ -47,3 +47,21 @@ class SolucionForm(FlaskForm):
     fecha_creacion = DateField('Fecha de creación', format='%Y-%m-%d')
     
     submit = SubmitField('Guardar')
+
+    def load_dynamic_choices(self, focos, tipos):
+        """
+        Load dynamic choices for the form fields.
+
+        Parameters
+        ----------
+        focos : list
+            List of focus options fetched from the API.
+        tipos : list
+            List of innovation types fetched from the API.
+        """
+        self.foco_innovacion.choices = [(f['id_foco_innovacion'], f['name']) for f in focos]
+        self.tipo_innovacion.choices = [(t['id_tipo_innovacion'], t['name']) for t in tipos]
+
+        # Log the choices for debugging
+        print(f"Foco Innovacion Choices: {self.foco_innovacion.choices}")
+        print(f"Tipo Innovacion Choices: {self.tipo_innovacion.choices}")

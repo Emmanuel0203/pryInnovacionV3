@@ -85,3 +85,76 @@ class APIClient:
         payload = self._wrap_payload({"id": record_id})
         endpoint = f"{self.table_name}/{record_id}"
         return self._make_request("DELETE", endpoint, payload=payload)
+
+    def fetch_endpoint_data(self, endpoint):
+        """
+        Fetches data from a specific API endpoint.
+
+        Parameters
+        ----------
+        endpoint : str
+            The endpoint to fetch data from (e.g., 'foco_innovacion').
+
+        Returns
+        -------
+        list
+            A list of data fetched from the API, or an empty list if an error occurs.
+        """
+        try:
+            response = requests.get(f"{self.base_url}/{endpoint}", timeout=10)
+            response.raise_for_status()
+            return response.json().get("datos", [])
+        except requests.exceptions.RequestException as e:
+            print(f"[APIClient] Error fetching data from endpoint '{endpoint}': {e}")
+            return []
+
+    def get_all(self):
+        """
+        Fetch all records from the associated table.
+        """
+        try:
+            response = self._make_request("GET")
+            return response.get("datos", []) if response else []
+        except Exception as e:
+            print(f"Error fetching all records: {e}")
+            return []
+
+    def get_by_id(self, id_field, record_id):
+        """
+        Fetch a specific record by its ID.
+
+        Parameters
+        ----------
+        id_field : str
+            The name of the ID field (e.g., 'codigo_solucion').
+        record_id : int
+            The ID of the record to fetch.
+
+        Returns
+        -------
+        dict or None
+            The record if found, otherwise None.
+        """
+        endpoint = f"{self.table_name}?{id_field}={record_id}"
+        response = self._make_request("GET", endpoint)
+        return response.get("datos", []) if response else None
+
+    def confirm(self, id_field, record_id):
+        """
+        Confirms a specific record by its ID.
+
+        Parameters
+        ----------
+        id_field : str
+            The name of the ID field (e.g., 'codigo_solucion').
+        record_id : int
+            The ID of the record to confirm.
+
+        Returns
+        -------
+        dict or None
+            The response from the API if successful, otherwise None.
+        """
+        endpoint = f"{self.table_name}/confirm"
+        payload = {id_field: record_id}
+        return self._make_request("POST", endpoint, payload=payload)

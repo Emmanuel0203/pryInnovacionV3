@@ -18,10 +18,10 @@
         {% include 'partials/header.html' %}
         <div class="container-fluid px-0">
             <div class="row no-gutters mx-0">
-                <div class="col-md-2 px-0">
+                <div class="col-md-3 col-12 px-0"> <!-- Ajuste del sidebar a col-md-3 -->
                     {% include 'partials/sidebar.html' %}
                 </div>
-                <div class="col-md-10 px-0">
+                <div class="col-md-9 col-12 px-0"> <!-- Ajuste del contenido principal a col-md-9 -->
                     <div class="main-content">
                         <div class="page-content">
                             {% block content %}{% endblock %}
