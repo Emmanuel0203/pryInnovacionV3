@@ -70,18 +70,11 @@ def load_user(email):
 app.register_blueprint(login_bp, url_prefix='/login')
 app.register_blueprint(ideas_bp, url_prefix='/ideas')
 app.register_blueprint(oportunidades_bp, url_prefix='/oportunidades')
-app.register_blueprint(soluciones_bp, url_prefix='/soluciones')
+app.register_blueprint(soluciones_bp)
 app.register_blueprint(perfil_bp, url_prefix='/perfil')
 app.register_blueprint(dashboard_bp, url_prefix='/dashboard')
 app.register_blueprint(main_bp, url_prefix='/')
 
-    # Rutas raíz / errores
-@app.route('/')
-def index():
-      from flask_login import current_user
-      if not current_user.is_authenticated:
-        return redirect(url_for('login.login_view'))
-      return redirect(url_for('dashboard.index'))
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -91,7 +84,11 @@ def page_not_found(e):
 def internal_server_error(e):
     return render_template('error/500.html'), 500
 
-
+@app.route('/test_template')
+def test_template():
+    import os
+    print(os.path.abspath('templates/templatesSoluciones/create_soluciones.html'))
+    return render_template('templatesSoluciones/list_soluciones.html')
 
 
 # =========================
@@ -99,3 +96,4 @@ def internal_server_error(e):
 # =========================
 if __name__ == '__main__':
     app.run(debug=True, port=5001)
+

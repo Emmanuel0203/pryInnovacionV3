@@ -61,7 +61,7 @@ def login_view():
                         # Guardar email en la sesión para compatibilidad con vistas existentes
                         session['user_email'] = usuario.email
                         flash("¡Login exitoso! Bienvenido", "success")
-                        return redirect(url_for("dashboard.index"))
+                        return render_template("menu.html")
                     else:
                         flash("Contraseña incorrecta", "danger")
                 else:
@@ -76,7 +76,7 @@ def login_view():
         except Exception as e:
             flash(f"Error inesperado: {e}", "danger")
 
-    return render_template("templatesLogin/login.html", form=form)
+    return render_template("login.html", form=form)
 
 
 @login_bp.route('/logout')
