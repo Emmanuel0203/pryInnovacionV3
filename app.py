@@ -100,6 +100,5 @@ def app_page():
 # Arranque de la app
 # =========================
 if __name__ == '__main__':
-    logging.basicConfig(filename='app.log', level=logging.DEBUG)
     app.run(debug=True, port=5001)
 
