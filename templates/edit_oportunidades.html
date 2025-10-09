@@ -75,16 +75,6 @@
                     </div>
 
                     <div class="mb-3">
-                        {{ form.tipo_mercado.label(class="form-label") }}
-                        {{ form.tipo_mercado(class="form-select" + (" is-invalid" if form.tipo_mercado.errors else "")) }}
-                        {% if form.tipo_mercado.errors %}
-                            <div class="invalid-feedback">
-                                {% for error in form.tipo_mercado.errors %}{{ error }}{% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="mb-3">
                         {{ form.estado.label(class="form-label") }}
                         {{ form.estado(class="form-select" + (" is-invalid" if form.estado.errors else "")) }}
                         {% if form.estado.errors %}
@@ -96,7 +86,7 @@
 
                     <div class="form-group mb-0">
                         <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-                        <a href="{{ url_for('oportunidades.list_oportunidades') }}" class="btn btn-secondary">Cancelar</a>
+                        <a href="{{ url_for('vistaOportunidad.list_oportunidades') }}" class="btn btn-secondary">Cancelar</a>
                     </div>
                 </form>
             </div>

@@ -5,3 +5,7 @@ main_bp = Blueprint('main', __name__)
 @main_bp.route('/')
 def index():
     return render_template('home.html') 
+
+@main_bp.route('/menu')
+def menu():
+    return render_template('menu.html')

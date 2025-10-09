@@ -109,3 +109,9 @@ def index():
                              solucion_count=0,
                              now=datetime.now().strftime('%d/%m/%Y %H:%M:%S'),
                              error=str(e))
+    
+@dashboard_bp.route('/proyectos')
+@login_required
+def proyectos():
+    # Lógica para cargar el dashboard
+    return render_template('listar_proyectos.html')
