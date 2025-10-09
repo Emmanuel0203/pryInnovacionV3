@@ -61,7 +61,7 @@ def login_view():
                         # Guardar email en la sesión para compatibilidad con vistas existentes
                         session['user_email'] = usuario.email
                         flash("¡Login exitoso! Bienvenido", "success")
-                        return render_template("menu.html")
+                        return redirect(url_for('main.menu'))
                     else:
                         flash("Contraseña incorrecta", "danger")
                 else:

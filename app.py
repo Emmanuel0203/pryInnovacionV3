@@ -88,12 +88,10 @@ def internal_server_error(e):
 @app.route('/test_template')
 def test_template():
     import os
-    print(os.path.abspath('templates/templatesSoluciones/create_soluciones.html'))
-    return render_template('templatesSoluciones/list_soluciones.html')
+    print(os.path.abspath('templates/calendar.html'))
+    return render_template('calendar.html')
 
-@app.route('/app')
-def app_page():
-    return render_template('app.html')
+
 
 
 # =========================

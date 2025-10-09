@@ -8,7 +8,7 @@
                                 <li class="menu-title">Main</li>
         
                                 <li id="dashboard_li">
-                                    <a href="/dashboard/" class="waves-effect" id="dashboard_anchor">
+                                    <a href="{{ url_for('dashboard.index') }}" class="waves-effect" id="dashboard_anchor">
                                         <i class="mdi mdi-view-dashboard"></i>
                                         <span>Dashboard</span>
                                     </a>
@@ -20,9 +20,10 @@
                                     </a>
                                 </li>
                                 <li id="proyectos_li">
-                                    <a href="/proyectos/" class="waves-effect" id="proyectos_anchor">
+                                    <a href="{{ url_for('dashboard.proyectos') }}" class="waves-effect" id="proyectos_anchor">
                                         <i class="mdi mdi-briefcase"></i>
                                         <span>Proyectos</span>
+                                        
                                     </a>
                                 </li>
                                 
@@ -54,7 +55,8 @@
                                         <span>Modulo Oportunidades</span>
                                     </a>
                                     <ul class="sub-menu mm-collapse" aria-expanded="false">
-                                        <li><a href="/oportunidades/create_oportunidad/">Crear Oportunidad</a></li>
+                                        <li><a href="{{ url_for('vistaOportunidad.create_oportunidad') }}">Crear Oportunidad</a></li>
+                                        <li><a href="{{ url_for('vistaOportunidad.list_oportunidades') }}">Listar Oportunidades</a></li>
                                         <li><a href="#">Tabla de selección de fuentes</a></li>
                                         <li><a href="#">Formulario de resgistro de nuevo experto</a></li>
 
@@ -69,7 +71,7 @@
                                     <ul class="sub-menu mm-collapse" aria-expanded="false">
                                         <li><a href="{{ url_for('vistaSolucion.create_solucion') }}">Crear solución</a></li>
                                         <li><a href="{{ url_for('vistaSolucion.list_solucion') }}">Listar soluciones</a></li>
-                                        <li><a href="#">Calendario de lanzamientos</a></li>
+                                        <li><a href="{{ url_for('vistaSolucion.vistacalendario') }}">Calendario de lanzamientos</a></li>
                                         <li>
                                             <a href="javascript: void(0);" class="has-arrow waves-effect">
                                                 <span>Lanzamientos</span>

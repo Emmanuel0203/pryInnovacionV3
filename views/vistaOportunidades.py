@@ -1,179 +1,143 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app
+from flask_login import login_required
 from utils.api_client import APIClient
-from config_flask import API_CONFIG
 from forms.formsOportunidades import OportunidadForm
+from datetime import datetime
 
-oportunidades_bp = Blueprint('oportunidades', __name__)
-api_client = APIClient(API_CONFIG['base_url'])
+oportunidades_bp = Blueprint(
+    "vistaOportunidad",
+    __name__,
+    template_folder="templates",
+    url_prefix="/oportunidades"
+)
 
-@oportunidades_bp.route('/oportunidades')
+oportunidad_client = APIClient("oportunidad")
+
+@oportunidades_bp.route("/", methods=["GET"])
+@login_required
 def list_oportunidades():
     try:
-        user_email = session.get('user_email')
-        if not user_email:
-            flash('Debe iniciar sesión para ver las oportunidades', 'error')
-            return redirect(url_for('login.login_view'))
-            
-        # Obtener datos
-        oportunidades = api_client.get_oportunidades()
-        
-        # Crear formulario para obtener las opciones
+        oportunidades = oportunidad_client.get_all()
+        # Validar que cada oportunidad tiene el atributo 'codigo_oportunidad'
+        for oportunidad in oportunidades:
+            if "codigo_oportunidad" not in oportunidad:
+                current_app.logger.warning("La oportunidad no tiene 'codigo_oportunidad': %s", oportunidad)
         form = OportunidadForm()
-        tipos = api_client.get_tipos_mercado() or []
-        estados = api_client.get_estados() or []
-        form.tipo_mercado.choices = [(t['id'], t['nombre']) for t in tipos]
-        form.estado.choices = [(e['id'], e['nombre']) for e in estados]
-        
-        return render_template('templatesOportunidades/list.html', 
-                             oportunidades=oportunidades,
-                             form=form)
     except Exception as e:
-        flash(f'Error al cargar las oportunidades: {str(e)}', 'error')
-        return redirect(url_for('dashboard.index'))
-
-@oportunidades_bp.route('/oportunidades/<int:oportunidad_id>')
-def view_oportunidad(oportunidad_id):
-    try:
-        user_email = session.get('user_email')
-        if not user_email:
-            flash('Debe iniciar sesión para ver la oportunidad', 'error')
-            return redirect(url_for('login.login_view'))
-            
-        oportunidad = api_client.get_oportunidad(oportunidad_id)
-        if not oportunidad:
-            flash('Oportunidad no encontrada', 'error')
-            return redirect(url_for('oportunidades.list_oportunidades'))
-        
-        # Crear formulario para obtener las opciones
+        current_app.logger.exception("Error al obtener oportunidades")
+        flash(f"Error al obtener las oportunidades: {e}", "danger")
+        oportunidades = []
         form = OportunidadForm()
-        tipos = api_client.get_tipos_mercado() or []
-        estados = api_client.get_estados() or []
-        form.tipo_mercado.choices = [(t['id'], t['nombre']) for t in tipos]
-        form.estado.choices = [(e['id'], e['nombre']) for e in estados]
-            
-        return render_template('templatesOportunidades/view.html', 
-                             oportunidad=oportunidad,
-                             form=form)
-    except Exception as e:
-        flash(f'Error al cargar la oportunidad: {str(e)}', 'error')
-        return redirect(url_for('oportunidades.list_oportunidades'))
 
-@oportunidades_bp.route('/oportunidades/create', methods=['GET', 'POST'])
+    return render_template("list_oportunidades.html", oportunidades=oportunidades, form=form)
+
+
+
+@oportunidades_bp.route("/<int:codigo_oportunidad>", methods=["GET"])
+@login_required
+def view_oportunidad(codigo_oportunidad):
+    oportunidad = oportunidad_client.get_by_id("codigo_oportunidad", codigo_oportunidad)
+    if not oportunidad:
+        flash("Oportunidad no encontrada", "error")
+        return redirect(url_for("vistaOportunidad.list_oportunidades"))
+
+    form = OportunidadForm(data=oportunidad[0])
+
+    return render_template("view_oportunidades.html", oportunidad=oportunidad[0], form=form)
+
+@oportunidades_bp.route("/create", methods=["GET", "POST"])
+@login_required
 def create_oportunidad():
-    try:
-        user_email = session.get('user_email')
-        if not user_email:
-            flash('Debe iniciar sesión para crear una oportunidad', 'error')
-            return redirect(url_for('login.login_view'))
-            
-        form = OportunidadForm()
-        
-        # Cargar opciones para los select
-        tipos = api_client.get_tipos_mercado() or []
-        estados = api_client.get_estados() or []
-        form.tipo_mercado.choices = [(t['id'], t['nombre']) for t in tipos]
-        form.estado.choices = [(e['id'], e['nombre']) for e in estados]
-        
-        if form.validate_on_submit():
-            oportunidad_data = {
-                'titulo': form.titulo.data,
-                'descripcion': form.descripcion.data,
-                'palabras_claves': form.palabras_claves.data,
-                'recursos_requeridos': form.recursos_requeridos.data,
-                'tipo_mercado': form.tipo_mercado.data,
-                'estado': form.estado.data,
-                'usuario_email': user_email
-            }
-            
-            response = api_client.create_oportunidad(oportunidad_data)
-            if response:
-                flash('Oportunidad creada exitosamente', 'success')
-                return redirect(url_for('oportunidades.list_oportunidades'))
-            else:
-                flash('Error al crear la oportunidad', 'error')
-                
-        return render_template('templatesOportunidades/create.html', form=form)
-    except Exception as e:
-        flash(f'Error al crear la oportunidad: {str(e)}', 'error')
-        return render_template('templatesOportunidades/create.html', form=form)
+    form = OportunidadForm()
 
-@oportunidades_bp.route('/oportunidades/<int:oportunidad_id>/edit', methods=['GET', 'POST'])
-def update_oportunidad(oportunidad_id):
-    try:
-        user_email = session.get('user_email')
-        if not user_email:
-            flash('Debe iniciar sesión para editar la oportunidad', 'error')
-            return redirect(url_for('login.login_view'))
-            
-        oportunidad = api_client.get_oportunidad(oportunidad_id)
-        if not oportunidad:
-            flash('Oportunidad no encontrada', 'error')
-            return redirect(url_for('oportunidades.list_oportunidades'))
-            
-        form = OportunidadForm(obj=oportunidad)
-        
-        # Cargar opciones para los select
-        tipos = api_client.get_tipos_mercado() or []
-        estados = api_client.get_estados() or []
-        form.tipo_mercado.choices = [(t['id'], t['nombre']) for t in tipos]
-        form.estado.choices = [(e['id'], e['nombre']) for e in estados]
-        
-        if form.validate_on_submit():
-            oportunidad_data = {
-                'titulo': form.titulo.data,
-                'descripcion': form.descripcion.data,
-                'palabras_claves': form.palabras_claves.data,
-                'recursos_requeridos': form.recursos_requeridos.data,
-                'tipo_mercado': form.tipo_mercado.data,
-                'estado': form.estado.data
-            }
-            
-            response = api_client.update_oportunidad(oportunidad_id, oportunidad_data)
-            if response:
-                flash('Oportunidad actualizada exitosamente', 'success')
-                return redirect(url_for('oportunidades.view_oportunidad', oportunidad_id=oportunidad_id))
-            else:
-                flash('Error al actualizar la oportunidad', 'error')
-                
-        return render_template('templatesOportunidades/edit.html', form=form, oportunidad=oportunidad)
-    except Exception as e:
-        flash(f'Error al actualizar la oportunidad: {str(e)}', 'error')
-        return render_template('templatesOportunidades/edit.html', form=form, oportunidad=oportunidad)
+    # Load dynamic choices for the form
+    focos = oportunidad_client.get_all("foco_innovacion")
+    tipos = oportunidad_client.get_all("tipo_innovacion")
+    form.load_dynamic_choices(focos, tipos)
 
-@oportunidades_bp.route('/oportunidades/<int:oportunidad_id>/delete', methods=['POST'])
-def delete_oportunidad(oportunidad_id):
-    try:
-        user_email = session.get('user_email')
-        if not user_email:
-            flash('Debe iniciar sesión para eliminar la oportunidad', 'error')
-            return redirect(url_for('login.login_view'))
-            
-        response = api_client.delete_oportunidad(oportunidad_id)
-        if response:
-            flash('Oportunidad eliminada exitosamente', 'success')
+    if form.validate_on_submit():
+        payload = {
+            "titulo": form.titulo.data,
+            "descripcion": form.descripcion.data,
+            "palabras_claves": form.palabras_claves.data,
+            "recursos_requeridos": form.recursos_requeridos.data,
+            "fecha_creacion": form.fecha_creacion.data.strftime('%Y-%m-%d') if form.fecha_creacion.data else None,
+            "archivo_multimedia": form.archivo_multimedia.data.filename,
+            "creador_por": session.get("user_email"),
+            "id_foco_innovacion": form.id_foco_innovacion.data,
+            "id_tipo_innovacion": form.id_tipo_innovacion.data,
+            "estado": form.estado.data,
+        }
+
+        response = oportunidad_client.insert_data(payload)
+        if response and response.status_code == 201:
+            flash("Oportunidad creada exitosamente", "success")
+            return redirect(url_for("vistaOportunidad.list_oportunidades"))
         else:
-            flash('Error al eliminar la oportunidad', 'error')
-            
-        return redirect(url_for('oportunidades.list_oportunidades'))
-    except Exception as e:
-        flash(f'Error al eliminar la oportunidad: {str(e)}', 'error')
-        return redirect(url_for('oportunidades.list_oportunidades'))
+            flash("Error al crear la oportunidad", "danger")
 
-@oportunidades_bp.route('/oportunidades/<int:oportunidad_id>/confirmar', methods=['POST'])
-def confirmar_oportunidad(oportunidad_id):
-    try:
-        user_email = session.get('user_email')
-        if not user_email:
-            flash('Debe iniciar sesión para confirmar la oportunidad', 'error')
-            return redirect(url_for('login.login_view'))
-            
-        response = api_client.confirmar_oportunidad(oportunidad_id)
-        if response:
-            flash('Oportunidad confirmada exitosamente', 'success')
-        else:
-            flash('Error al confirmar la oportunidad', 'error')
-            
-        return redirect(url_for('oportunidades.view_oportunidad', oportunidad_id=oportunidad_id))
-    except Exception as e:
-        flash(f'Error al confirmar la oportunidad: {str(e)}', 'error')
-        return redirect(url_for('oportunidades.list_oportunidades'))
+    return render_template("create_oportunidades.html", form=form)
+
+@oportunidades_bp.route("/update/<int:codigo_oportunidad>", methods=["GET", "POST"])
+@login_required
+def update_oportunidad(codigo_oportunidad):
+    oportunidad = oportunidad_client.get_by_id("codigo_oportunidad", codigo_oportunidad)
+    if not oportunidad:
+        flash("Oportunidad no encontrada", "error")
+        return redirect(url_for("vistaOportunidad.list_oportunidades"))
+
+    if isinstance(oportunidad[0].get("fecha_creacion"), str):
+        try:
+            oportunidad[0]["fecha_creacion"] = datetime.strptime(oportunidad[0]["fecha_creacion"], "%Y-%m-%d")
+        except ValueError:
+            flash("Formato de fecha inválido en la oportunidad", "danger")
+            return redirect(url_for("vistaOportunidad.list_oportunidades"))
+
+    form = OportunidadForm(data=oportunidad[0])
+
+    # Load dynamic choices for the form
+    focos = oportunidad_client.get_all("foco_innovacion")
+    tipos = oportunidad_client.get_all("tipo_innovacion")
+    form.load_dynamic_choices(focos, tipos)
+
+    if request.method == "POST" and form.validate_on_submit():
+        payload = {
+            "titulo": form.titulo.data,
+            "descripcion": form.descripcion.data,
+            "palabras_claves": form.palabras_claves.data,
+            "recursos_requeridos": form.recursos_requeridos.data,
+            "fecha_creacion": form.fecha_creacion.data.strftime('%Y-%m-%d') if form.fecha_creacion.data else None,
+            "archivo_multimedia": form.archivo_multimedia.data.filename,
+            "id_foco_innovacion": form.id_foco_innovacion.data,
+            "id_tipo_innovacion": form.id_tipo_innovacion.data,
+            "estado": form.estado.data,
+        }
+        oportunidad_client.update_data(codigo_oportunidad, payload)
+        flash("Oportunidad actualizada correctamente", "success")
+        return redirect(url_for("vistaOportunidad.list_oportunidades"))
+
+    return render_template("edit_oportunidades.html", form=form, oportunidad=oportunidad[0])
+
+@oportunidades_bp.route("/delete/<int:codigo_oportunidad>", methods=["POST"])
+@login_required
+def delete_oportunidad(codigo_oportunidad):
+    oportunidad = oportunidad_client.get_by_id("codigo_oportunidad", codigo_oportunidad)
+    if not oportunidad:
+        flash("Oportunidad no encontrada", "error")
+        return redirect(url_for("vistaOportunidad.list_oportunidades"))
+
+    oportunidad_client.delete_data(codigo_oportunidad)
+    flash("Oportunidad eliminada correctamente", "success")
+    return redirect(url_for("vistaOportunidad.list_oportunidades"))
+
+@oportunidades_bp.route("/confirmar/<int:codigo_oportunidad>", methods=["POST"])
+@login_required
+def confirmar_oportunidad(codigo_oportunidad):
+    oportunidad = oportunidad_client.get_by_id("codigo_oportunidad", codigo_oportunidad)
+    if not oportunidad:
+        flash("Oportunidad no encontrada", "error")
+        return redirect(url_for("vistaOportunidad.list_oportunidades"))
+
+    oportunidad_client.confirm("codigo_oportunidad", codigo_oportunidad)
+    flash("Oportunidad confirmada exitosamente", "success")
+    return redirect(url_for("vistaOportunidad.list_oportunidades"))

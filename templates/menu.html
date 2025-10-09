@@ -120,38 +120,42 @@
         }
     </style>
 
-    <div class="main-content d-flex flex-column" style="height: 100vh; overflow: hidden;">
-        <div class="page-content flex-grow-1 d-flex flex-column">
-            <div class="container-fluid flex-grow-1 d-flex flex-column">
-                <div id="result" class="flex-grow-1 d-flex align-items-stretch">
-                    <div class="row flex-grow-1 w-100">
-                        <!-- Tarjetas de módulo -->
-                        <div class="col-lg-4 col-md-6 col-sm-12 d-flex">
-                            <a href="{{ url_for('ideas.list_ideas') }}"  class="card flex-grow-1 custom-card text-white card-module" style="text-decoration: none;">
-                                <div class="card-body d-flex flex-column justify-content-center align-items-center text-center">
-                                    <img src="/static/img/ideas.png" alt="Módulo de Ideas" class="module-image mb-3">
-                                    <h4 class="card-title">Módulo de ideas</h4>
-                                    <p class="card-text">Creación de ideas.</p>
+    <div class="main-content">
+        <div class="page-content">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-12">
+                        <div id="result" class="d-flex flex-column align-items-stretch">
+                            <div class="row">
+                                <!-- Tarjetas de módulo -->
+                                <div class="col-lg-4 col-md-6 col-sm-12 d-flex">
+                                    <a href="{{ url_for('ideas.list_ideas') }}" class="card flex-grow-1 custom-card text-white card-module" style="text-decoration: none;">
+                                        <div class="card-body d-flex flex-column justify-content-center align-items-center text-center">
+                                            <img src="/static/img/ideas.png" alt="Módulo de Ideas" class="module-image mb-3">
+                                            <h4 class="card-title">Módulo de ideas</h4>
+                                            <p class="card-text">Creación de ideas.</p>
+                                        </div>
+                                    </a>
                                 </div>
-                            </a>
-                        </div>
-                        <div class="col-lg-4 col-md-6 col-sm-12 d-flex">
-                            <a href="{{ url_for('ideas.list_ideas') }}" class="card flex-grow-1 custom-card-opportunity text-white card-module" style="text-decoration: none;">
-                                <div class="card-body d-flex flex-column justify-content-center align-items-center text-center">
-                                    <img src="/static/img/oportunidad.png" alt="Módulo de Oportunidades" class="module-image mb-3">
-                                    <h4 class="card-title">Módulo de Oportunidades</h4>
-                                    <p class="card-text">Gestión de oportunidades.</p>
+                                <div class="col-lg-4 col-md-6 col-sm-12 d-flex">
+                                    <a href="{{ url_for('vistaOportunidad.list_oportunidades') }}" class="card flex-grow-1 custom-card-opportunity text-white card-module" style="text-decoration: none;">
+                                        <div class="card-body d-flex flex-column justify-content-center align-items-center text-center">
+                                            <img src="/static/img/oportunidad.png" alt="Módulo de Oportunidades" class="module-image mb-3">
+                                            <h4 class="card-title">Módulo de Oportunidades</h4>
+                                            <p class="card-text">Gestión de oportunidades.</p>
+                                        </div>
+                                    </a>
                                 </div>
-                            </a>
-                        </div>
-                        <div class="col-lg-4 col-md-6 col-sm-12 d-flex">
-                            <a href="{{ url_for('vistaSolucion.list_solucion') }}" class="card flex-grow-1 custom-card-solution text-white card-module" style="text-decoration: none;">
-                                <div class="card-body d-flex flex-column justify-content-center align-items-center text-center">
-                                    <img src="/static/img/soluciones1.png" alt="Módulo de Soluciones" class="module-image mb-3">
-                                    <h4 class="card-title">Módulo de Soluciones</h4>
-                                    <p class="card-text">Gestión de soluciones.</p>
+                                <div class="col-lg-4 col-md-6 col-sm-12 d-flex">
+                                    <a href="{{ url_for('vistaSolucion.list_solucion') }}" class="card flex-grow-1 custom-card-solution text-white card-module" style="text-decoration: none;">
+                                        <div class="card-body d-flex flex-column justify-content-center align-items-center text-center">
+                                            <img src="/static/img/soluciones1.png" alt="Módulo de Soluciones" class="module-image mb-3">
+                                            <h4 class="card-title">Módulo de Soluciones</h4>
+                                            <p class="card-text">Gestión de soluciones.</p>
+                                        </div>
+                                    </a>
                                 </div>
-                            </a>
+                            </div>
                         </div>
                     </div>
                 </div>
