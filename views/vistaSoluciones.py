@@ -185,3 +185,9 @@ def confirmar_solucion(codigo_solucion):
         return render_template("confirmar_soluciones.html", form=form, solucion=solution[0], mensaje_experto=mensaje_experto)
 
     return render_template("confirmar_soluciones.html", form=form, solucion=solution[0])
+
+
+@soluciones_bp.route("/calendario", methods=["GET"])
+@login_required
+def vistacalendario():
+    return render_template("calendar.html")
