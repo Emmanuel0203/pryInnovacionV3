@@ -73,20 +73,30 @@
                             </div>
                         {% endif %}
                     </div>
-
+                    
                     <div class="mb-3">
-                        {{ form.tipo_mercado.label(class="form-label") }}
-                        {{ form.tipo_mercado(class="form-select" + (" is-invalid" if form.tipo_mercado.errors else "")) }}
-                        {% if form.tipo_mercado.errors %}
+                        {{ form.archivo_multimedia.label(class="form-label") }}
+                        {{ form.archivo_multimedia(class="form-control" + (" is-invalid" if form.archivo_multimedia.errors else "")) }}
+                        {% if form.archivo_multimedia.errors %}
                             <div class="invalid-feedback">
-                                {% for error in form.tipo_mercado.errors %}{{ error }}{% endfor %}
+                                {% for error in form.archivo_multimedia.errors %}{{ error }}{% endfor %}
                             </div>
                         {% endif %}
                     </div>
-                    
+
+                    <div class="mb-3">
+                        {{ form.creador_por.label(class="form-label") }}
+                        {{ form.creador_por(class="form-control" + (" is-invalid" if form.creador_por.errors else "")) }}
+                        {% if form.creador_por.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.creador_por.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
                     <div class="mb-3">
                         {{ form.estado.label(class="form-label") }}
-                        {{ form.estado(class="form-select" + (" is-invalid" if form.estado.errors else "")) }}
+                        {{ form.estado(class="form-check-input" + (" is-invalid" if form.estado.errors else "")) }}
                         {% if form.estado.errors %}
                             <div class="invalid-feedback">
                                 {% for error in form.estado.errors %}{{ error }}{% endfor %}
@@ -96,7 +106,7 @@
 
                     <div class="form-group mb-0">
                         <button type="submit" class="btn btn-primary">Guardar Oportunidad</button>
-                        <a href="{{ url_for('oportunidades.list_oportunidades') }}" class="btn btn-secondary">Cancelar</a>
+                        <a href="{{ url_for('vistaOportunidad.list_oportunidades') }}" class="btn btn-secondary">Cancelar</a>
                     </div>
                 </form>
             </div>
