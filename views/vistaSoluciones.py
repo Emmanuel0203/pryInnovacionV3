@@ -85,9 +85,19 @@ def create_solucion():
             "tipo_innovacion": form.tipo_innovacion.data,
             "foco_innovacion": form.foco_innovacion.data,
             "usuario_email": session.get("user_email"),
-            # Puedes agregar aquí el manejo de archivo si lo necesitas
         }
+
+        # Log the payload for debugging
+        current_app.logger.info(f"Payload enviado: {payload}")
+
         response = solucion_client.create(payload)
+
+        # Log the response for debugging
+        if response:
+            current_app.logger.info(f"Respuesta de la API: {response.status_code}, {response.text}")
+        else:
+            current_app.logger.error("No se recibió respuesta de la API")
+
         if response and response.status_code == 201:
             flash("Solución creada exitosamente", "success")
             return redirect(url_for("vistaSolucion.list_solucion"))

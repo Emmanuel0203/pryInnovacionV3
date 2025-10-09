@@ -158,3 +158,36 @@ class APIClient:
         endpoint = f"{self.table_name}/confirm"
         payload = {id_field: record_id}
         return self._make_request("POST", endpoint, payload=payload)
+
+    def get_ideas(self):
+        """
+        Fetches all ideas from the API.
+
+        Returns
+        -------
+        list
+            A list of ideas fetched from the API, or an empty list if an error occurs.
+        """
+        return self.fetch_endpoint_data("ideas")
+
+    def get_oportunidades(self):
+        """
+        Fetches all opportunities from the API.
+
+        Returns
+        -------
+        list
+            A list of opportunities fetched from the API, or an empty list if an error occurs.
+        """
+        return self.fetch_endpoint_data("oportunidades")
+
+    def get_soluciones(self):
+        """
+        Fetches all solutions from the API.
+
+        Returns
+        -------
+        list
+            A list of solutions fetched from the API, or an empty list if an error occurs.
+        """
+        return self.fetch_endpoint_data("soluciones")

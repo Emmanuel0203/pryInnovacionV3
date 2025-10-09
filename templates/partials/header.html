@@ -1,9 +1,9 @@
-    <header id="page-topbar">
+<header id="page-topbar">
         <div class="navbar-header">
                     <div class="d-flex">
                         <!-- LOGO -->
                         <div class="navbar-brand-box">
-                            <a href="/app/" class="logo logo-dark">
+                            <a href="{{ url_for('main.menu') }}" class="logo logo-dark">
                                 <!-- Icono para cuando el menú está cerrado -->
                                 <span class="logo-sm">
                                     <i class="fas fa-lightbulb main-icon-without-slide icon-png-container pd-lv4" style="font-size: 30px;"></i>
@@ -14,7 +14,7 @@
                                     <span style="font-size: 2px; margin-left: 10px; top: 50%; color: #ffffff;">INNOVACIÓN</span>
                                 </span>
                             </a>
-                            <a href="/app/" class="logo logo-light">
+                            <a href="{{ url_for('main.menu') }}" class="logo logo-light">
                                 <!-- Para cuando el menú está cerrado -->
                                 <span class="logo-sm">
                                     <div class="logo-container">
