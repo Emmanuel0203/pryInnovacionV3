@@ -108,15 +108,26 @@ class APIClient:
             print(f"[APIClient] Error fetching data from endpoint '{endpoint}': {e}")
             return []
 
-    def get_all(self):
+    def get_all(self, resource=None):
         """
-        Fetch all records from the associated table.
+        Fetch all records or filter by a specific resource.
+
+        Parameters
+        ----------
+        resource : str, optional
+            The resource to filter by (e.g., 'foco_innovacion').
+
+        Returns
+        -------
+        list
+            A list of data fetched from the API, or an empty list if an error occurs.
         """
         try:
-            response = self._make_request("GET")
+            endpoint = f"{self.table_name}/{resource}" if resource else self.table_name
+            response = self._make_request("GET", endpoint)
             return response.get("datos", []) if response else []
         except Exception as e:
-            print(f"Error fetching all records: {e}")
+            print(f"Error fetching records: {e}")
             return []
 
     def get_by_id(self, id_field, record_id):
@@ -168,7 +179,7 @@ class APIClient:
         list
             A list of ideas fetched from the API, or an empty list if an error occurs.
         """
-        return self.fetch_endpoint_data("ideas")
+        return self.fetch_endpoint_data("idea")
 
     def get_oportunidades(self):
         """
@@ -179,7 +190,7 @@ class APIClient:
         list
             A list of opportunities fetched from the API, or an empty list if an error occurs.
         """
-        return self.fetch_endpoint_data("oportunidades")
+        return self.fetch_endpoint_data("oportunidad")
 
     def get_soluciones(self):
         """
@@ -190,4 +201,4 @@ class APIClient:
         list
             A list of solutions fetched from the API, or an empty list if an error occurs.
         """
-        return self.fetch_endpoint_data("soluciones")
+        return self.fetch_endpoint_data("solucion")
