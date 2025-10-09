@@ -38,13 +38,13 @@
                                         <span>Módulo de Ideas</span>
                                     </a>
                                     <ul class="sub-menu mm-collapse" aria-expanded="false">
-                                        <li><a href="/ideas/create/">Agrega tu idea</a></li>
+                                        <li><a href="{{ url_for('ideas.create_idea') }}">Agrega tu idea</a></li>
                                         <li><a href="#">Matriz de evaluación y retroalimentación</a></li>
-                                        <li><a href="#">Estadísticas de ideas</a></li>
-                                        <li><a href="#">Retos</a></li>
-                                        <li><a href="#">Top 10 - Generadores de ideas</a></li>
-                                        <li><a href="#">Evaluación de ideas</a></li>
-                                        <li><a href="#">Mercado de ideas</a></li>
+                                        <li><a href="{{ url_for('ideas.estadisticas') }}">Estadísticas de ideas</a></li>
+                                        <li><a href="{{ url_for('ideas.retos') }}">Retos</a></li>
+                                        <li><a href="{{ url_for('ideas.top_generadores') }}">Top 10 - Generadores de ideas</a></li>
+                                        <li><a href="{{ url_for('ideas.evaluacion') }}">Evaluación de ideas</a></li>
+                                        <li><a href="{{ url_for('ideas.mercado') }}">Mercado de ideas</a></li>
                                     </ul>
                                 </li>
                                 

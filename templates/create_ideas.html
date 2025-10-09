@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block head %}
-    {# Eliminado el datepicker CSS y JS para fecha_creacion #}
+    {# No se usa datepicker, por eso se eliminan los JS/CSS de fecha_creacion #}
 {% endblock head %}
 
 {% block content %}
@@ -14,15 +14,14 @@
     </div>
 </div>
 
-
 <div class="row">
-    <div class="col-12"> <!-- Cambiado a col-12 para ocupar todo el ancho -->
+    <div class="col-12">
         <div class="card">
             <div class="card-body">
                 <h4 class="card-title">Registrar Idea</h4>
                 <p class="card-title-desc">Ingrese la información para la nueva idea</p>
 
-                {# Mostrar errores generales del formulario si existen #}
+                {# Mostrar errores generales del formulario #}
                 {% if form.errors %}
                     <div class="alert alert-danger">
                         Errores en el formulario:
@@ -37,7 +36,7 @@
                 {% endif %}
 
                 <form method="POST" enctype="multipart/form-data">
-                    {{ form.hidden_tag() }} {# Incluye CSRF token y otros campos ocultos #}
+                    {{ form.hidden_tag() }} {# Incluye CSRF token y campos ocultos #}
 
                     <div class="mb-3">
                         {{ form.titulo.label(class="form-label") }}
@@ -71,7 +70,7 @@
 
                     <div class="mb-3">
                         {{ form.recursos_requeridos.label(class="form-label") }}
-                        {{ form.recursos_requeridos(class="form-control" + (" is-invalid" if form.recursos_requeridos.errors else ""), rows=3) }}
+                        {{ form.recursos_requeridos(class="form-control" + (" is-invalid" if form.recursos_requeridos.errors else "")) }}
                         {% if form.recursos_requeridos.errors %}
                             <div class="invalid-feedback">
                                 {% for error in form.recursos_requeridos.errors %}{{ error }}{% endfor %}
@@ -79,10 +78,7 @@
                         {% endif %}
                     </div>
 
-                    {# Eliminado el campo fecha_creacion del formulario #}
-
-                    {# Campo para archivo multimedia (opcional) - Asumiendo que existe en tu form #}
-                    {# 
+                    {# Campo de archivo multimedia opcional #}
                     <div class="mb-3">
                         {{ form.archivo_multimedia.label(class="form-label") }}
                         {{ form.archivo_multimedia(class="form-control" + (" is-invalid" if form.archivo_multimedia.errors else "")) }}
@@ -92,36 +88,34 @@
                             </div>
                         {% endif %}
                     </div>
-                    #}                    
 
                     <div class="mb-3">
-                        {{ form.tipo_innovacion.label(class="form-label") }}
-                        {{ form.tipo_innovacion(class="form-select" + (" is-invalid" if form.tipo_innovacion.errors else "")) }}
-                        {% if form.tipo_innovacion.errors %}
+                        {{ form.id_tipo_innovacion.label(class="form-label") }}
+                        {{ form.id_tipo_innovacion(class="form-select" + (" is-invalid" if form.id_tipo_innovacion.errors else "")) }}
+                        {% if form.id_tipo_innovacion.errors %}
                             <div class="invalid-feedback">
-                                {% for error in form.tipo_innovacion.errors %}{{ error }}{% endfor %}
+                                {% for error in form.id_tipo_innovacion.errors %}{{ error }}{% endfor %}
                             </div>
                         {% endif %}
                     </div>
                     
                     <div class="mb-3">
-                        {{ form.foco_innovacion.label(class="form-label") }}
-                        {{ form.foco_innovacion(class="form-select" + (" is-invalid" if form.foco_innovacion.errors else "")) }}
-                        {% if form.foco_innovacion.errors %}
+                        {{ form.id_foco_innovacion.label(class="form-label") }}
+                        {{ form.id_foco_innovacion(class="form-select" + (" is-invalid" if form.id_foco_innovacion.errors else "")) }}
+                        {% if form.id_foco_innovacion.errors %}
                             <div class="invalid-feedback">
-                                {% for error in form.foco_innovacion.errors %}{{ error }}{% endfor %}
+                                {% for error in form.id_foco_innovacion.errors %}{{ error }}{% endfor %}
                             </div>
                         {% endif %}
                     </div>
 
                     <div class="form-group mb-0">
                         <button type="submit" class="btn btn-primary">Guardar Idea</button>
-                        <a href="{{ url_for('ideas.list_ideas') }}" class="btn btn-secondary">Cancelar</a> {# Cambiado a list_ideas #}
+                        <a href="{{ url_for('ideas.list_ideas') }}" class="btn btn-secondary">Cancelar</a>
                     </div>
                 </form>
             </div>
         </div>
     </div>
-    <!-- end col -->
 </div>
 {% endblock content %}

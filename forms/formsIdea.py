@@ -1,8 +1,16 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, TextAreaField, SelectField, SubmitField
-from wtforms.validators import DataRequired, Length, Optional
+from wtforms import (
+    StringField, TextAreaField, SelectField, SubmitField,
+    HiddenField, BooleanField, IntegerField, DateField
+)
+from flask_wtf.file import FileField, FileAllowed
+from wtforms.validators import DataRequired, Length, Optional, NumberRange
+
 
 class IdeaForm(FlaskForm):
+
+    codigo_idea = HiddenField('Código de Idea')  
+    
     titulo = StringField('Título', validators=[
         DataRequired(message='El título es requerido'),
         Length(min=5, max=100, message='El título debe tener entre 5 y 100 caracteres')
@@ -18,9 +26,9 @@ class IdeaForm(FlaskForm):
         Length(max=200, message='Las palabras claves no pueden exceder los 200 caracteres')
     ])
     
-    recursos_requeridos = TextAreaField('Recursos Requeridos', validators=[
+    recursos_requeridos = IntegerField('Recursos Requeridos', validators=[
         Optional(),
-        Length(max=500, message='Los recursos requeridos no pueden exceder los 500 caracteres')
+        NumberRange(min=0, message='Los recursos requeridos deben ser un número positivo')
     ])
     
     id_tipo_innovacion = SelectField('Tipo de Innovación', coerce=int, validators=[
@@ -30,10 +38,15 @@ class IdeaForm(FlaskForm):
     id_foco_innovacion = SelectField('Foco de Innovación', coerce=int, validators=[
         DataRequired(message='El foco de innovación es requerido')
     ])
-    
-    mensaje_experto = TextAreaField('Mensaje para el Experto', validators=[
+
+    archivo_multimedia = FileField('Archivo Multimedia', validators=[
         Optional(),
-        Length(max=500, message='El mensaje no puede exceder los 500 caracteres')
+        FileAllowed(['jpg', 'png', 'pdf', 'mp4', 'zip', 'docx'], 'Formato no permitido.')
     ])
     
-    submit = SubmitField('Guardar Idea') 
+    fecha_creacion = DateField('Fecha de creación', format='%Y-%m-%d', validators=[Optional()])
+    creador_por = StringField('Creador por', validators=[Optional()])
+    estado = BooleanField('Estado activo', default=True)
+
+    
+    submit = SubmitField('Guardar Idea')
