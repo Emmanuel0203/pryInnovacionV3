@@ -4,8 +4,8 @@ from flask_wtf.csrf import CSRFProtect
 from dotenv import load_dotenv
 from datetime import timedelta
 from utils.api_client import APIClient
-from config_flask import API_CONFIG
 import os
+import logging
 
 # 🔑 Extensiones
 from extensions import login_manager
@@ -19,8 +19,7 @@ from views.vistaPerfil import perfil_bp
 from views.vistaDashboard import dashboard_bp
 from views.vistaMain import main_bp
 
-# 🔹 Configuración
-from config_flask import config
+
 
 # Cargar variables de entorno
 load_dotenv()
@@ -48,13 +47,16 @@ from extensions import login_manager
 
 
 @login_manager.user_loader
-def load_user(user_id):
+def load_user(email):
+    # Buscar usuario por email (identificador único, normalizado a minúsculas)
+    if not email:
+        return None
+    email = email.lower()
     client = APIClient("usuario")
-    result = client.get_data(where_condition=f"id_usuario = {user_id}")
+    result = client.get_data(where_condition=f"LOWER(email) = '{email}'")
     if result:
         user_data = result[0]
         return Usuario(
-            id_usuario=user_data["id_usuario"],
             email=user_data["email"],
             password=user_data["password"],
             is_active=user_data.get("is_active", True),
@@ -69,18 +71,11 @@ def load_user(user_id):
 app.register_blueprint(login_bp, url_prefix='/login')
 app.register_blueprint(ideas_bp, url_prefix='/ideas')
 app.register_blueprint(oportunidades_bp, url_prefix='/oportunidades')
-app.register_blueprint(soluciones_bp, url_prefix='/soluciones')
+app.register_blueprint(soluciones_bp)
 app.register_blueprint(perfil_bp, url_prefix='/perfil')
 app.register_blueprint(dashboard_bp, url_prefix='/dashboard')
 app.register_blueprint(main_bp, url_prefix='/')
 
-    # Rutas raíz / errores
-@app.route('/')
-def index():
-      from flask_login import current_user
-      if not current_user.is_authenticated:
-        return redirect(url_for('login.login_view'))
-      return redirect(url_for('dashboard.index'))
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -90,11 +85,21 @@ def page_not_found(e):
 def internal_server_error(e):
     return render_template('error/500.html'), 500
 
+@app.route('/test_template')
+def test_template():
+    import os
+    print(os.path.abspath('templates/templatesSoluciones/create_soluciones.html'))
+    return render_template('templatesSoluciones/list_soluciones.html')
 
+@app.route('/app')
+def app_page():
+    return render_template('app.html')
 
 
 # =========================
 # Arranque de la app
 # =========================
 if __name__ == '__main__':
+    logging.basicConfig(filename='app.log', level=logging.DEBUG)
     app.run(debug=True, port=5001)
+

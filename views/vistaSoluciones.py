@@ -7,164 +7,171 @@ from utils.api_client import APIClient
 from utils.external_api import FocoInnovacionAPI, TipoInnovacionAPI
 from forms.formsSoluciones import SolucionForm
 from flask_login import login_required
+import requests
+from datetime import datetime
 
 
 soluciones_bp = Blueprint(
     "vistaSolucion",
     __name__,
-    template_folder="../templates/soluciones",
+    template_folder="templates",
     url_prefix="/soluciones"
 )
 
+solucion_client = APIClient("solucion")
 
 @soluciones_bp.route("/", methods=["GET"])
 @login_required
-def list_soluciones():
-    """
-    Lista soluciones con filtros (tipo_innovacion, foco_innovacion, estado).
-    Usa SolucionService para obtener y enriquecer los datos.
-    """
-    # --- autenticación: preferimos current_user (Flask-Login) y fallback a session ---
-    user_email = None
+def list_solucion():
     try:
-        if getattr(current_user, "is_authenticated", False):
-            # Ajusta el atributo según tu User model (email, username, etc.)
-            user_email = getattr(current_user, "email", None)
-        if not user_email:
-            user_email = session.get("user_email")
-    except Exception:
-        # Si algo inesperado falla con current_user, fallback a session
-        user_email = session.get("user_email")
+        soluciones = solucion_client.get_all()
+        focos = solucion_client.fetch_endpoint_data("foco_innovacion")
+        tipos = solucion_client.fetch_endpoint_data("tipo_innovacion")
 
-    if not user_email:
-        flash("Debes iniciar sesión para ver las soluciones.", "warning")
-        # Ajusta 'auth.login' por el endpoint real de login en tu app Flask
-        return redirect(url_for("auth.login"))
+        # Log the fetched data for debugging
+        current_app.logger.info(f"Focos: {focos}, Tipos: {tipos}")
 
-    # --- leer filtros desde query params ---
-    selected_tipo = request.args.get("tipo_innovacion", "").strip()
-    selected_foco = request.args.get("foco_innovacion", "").strip()
-    selected_estado = request.args.get("estado", "").strip()
-
-    filters = {
-        "id_tipo_innovacion": selected_tipo,
-        "id_foco_innovacion": selected_foco,
-        "estado": selected_estado
-    }
-
-    try:
-        soluciones = SolucionService.list_solutions(filters)
-        if not soluciones:
-            flash("No hay soluciones disponibles.", "info")
-        else:
-            flash(f"Se obtuvieron {len(soluciones)} soluciones.", "success")
+        # Integrate with SolucionForm
+        form = SolucionForm()
+        form.load_dynamic_choices(focos, tipos)
     except Exception as e:
         current_app.logger.exception("Error al obtener soluciones")
         flash(f"Error al obtener las soluciones: {e}", "danger")
         soluciones = []
-
-    # --- obtener lista completa de focos y tipos para los selects de filtro (si quieres mostrarlos) ---
-    try:
-        focos = FocoInnovacionAPI.get_focos()
-    except Exception:
         focos = []
-
-    try:
-        tipos = TipoInnovacionAPI.get_tipos()
-    except Exception:
         tipos = []
+        form = SolucionForm()
 
-    # --- verificar rol (perfil) para saber si es 'experto' ---
-    perfil_client = APIClient(table_name="perfil")
-    perfil_data = perfil_client.get_data(where_condition=f"usuario_email = '{user_email}'")
-    is_experto = False
-    try:
-        if perfil_data and isinstance(perfil_data, list) and len(perfil_data) > 0:
-            is_experto = str(perfil_data[0].get("rol", "")).lower() == "experto"
-    except Exception:
-        is_experto = False
-
-    context = {
-        "soluciones": soluciones,
-        "tipos": tipos,
-        "focos": focos,
-        "selected_tipo": selected_tipo,
-        "selected_foco": selected_foco,
-        "selected_estado": selected_estado,
-        "user_email": user_email,
-        "is_experto": is_experto,
-    }
-
-    return render_template("soluciones/list_soluciones.html", **context)
+    return render_template("list_soluciones.html", soluciones=soluciones, focos=focos, tipos=tipos, form=form)
 
 
 
-# ===========================
-# GET - Get solution by ID
-# ===========================
-"""@soluciones_bp.route("/<int:solucion_id>", methods=["GET"])
+
+@soluciones_bp.route("/<int:codigo_solucion>", methods=["GET"])
 @login_required
-def get_solution(solucion_id):
-    solution = solucion_service.get(solucion_id)
+def get_solucion(codigo_solucion):
+    solution = solucion_client.get_by_id("codigo_solucion", codigo_solucion)
     if not solution:
-        flash("Solution not found", "error")
-        return redirect(url_for("solucion.list_solutions"))
-    return render_template("soluciones/detail.html", solution=solution)
+        flash("Solución no encontrada", "error")
+        return redirect(url_for("vistaSolucion.list_solucion"))
+    return render_template("detail_soluciones.html", solution=solution[0])
 
 
-# ===========================
-# POST - Create a new solution
-# ===========================
+
 @soluciones_bp.route("/create", methods=["GET", "POST"])
 @login_required
 def create_solucion():
+    
     form = SolucionForm()
 
-    # Aquí deberías llenar dinámicamente los choices desde la API si es necesario
-    form.tipo.choices = [(1, "Tipo A"), (2, "Tipo B")]
-    form.foco.choices = [(1, "Foco A"), (2, "Foco B")]
+    # Cargar opciones dinámicamente desde la API
+    try:
+        focos = solucion_client.fetch_endpoint_data("foco_innovacion")
+        tipos = solucion_client.fetch_endpoint_data("tipo_innovacion")
+        form.foco_innovacion.choices = [(f['id_foco_innovacion'], f['name']) for f in focos]
+        form.tipo_innovacion.choices = [(t['id_tipo_innovacion'], t['name']) for t in tipos]
+    except Exception as e:
+        flash("Error al cargar opciones de innovación", "danger")
+        form.foco_innovacion.choices = []
+        form.tipo_innovacion.choices = []
 
     if form.validate_on_submit():
-        response = service.crear_solucion(form, current_user.id)
+        payload = {
+            "titulo": form.titulo.data,
+            "descripcion": form.descripcion.data,
+            "palabras_claves": form.palabras_claves.data,
+            "recursos_requeridos": form.recursos_requeridos.data,
+            "fecha_creacion": form.fecha_creacion.data.strftime('%Y-%m-%d') if form.fecha_creacion.data else None,
+            "tipo_innovacion": form.tipo_innovacion.data,
+            "foco_innovacion": form.foco_innovacion.data,
+            "usuario_email": session.get("user_email"),
+            # Puedes agregar aquí el manejo de archivo si lo necesitas
+        }
+        response = solucion_client.create(payload)
         if response and response.status_code == 201:
             flash("Solución creada exitosamente", "success")
-            return redirect(url_for("vistaSolucion.list_soluciones"))
+            return redirect(url_for("vistaSolucion.list_solucion"))
         else:
             flash("Error al crear la solución", "danger")
 
-    return render_template("soluciones/create.html", form=form)
+    return render_template("create_soluciones.html", form=form)
 
 
-# ===========================
-# POST - Update a solution
-# ===========================
-@soluciones_bp.route("/update/<int:solucion_id>", methods=["GET", "POST"])
+
+@soluciones_bp.route("/update/<int:codigo_solucion>", methods=["GET", "POST"])
 @login_required
-def update_solution(solucion_id):
-    solution = solucion_service.get(solucion_id)
+def update_solucion(codigo_solucion):
+    solution = solucion_client.get_by_id("codigo_solucion", codigo_solucion)
     if not solution:
-        flash("Solution not found", "error")
-        return redirect(url_for("solucion.list_solutions"))
+        flash("Solución no encontrada", "error")
+        return redirect(url_for("vistaSolucion.list_solucion"))
+
+    # Convertir fecha_creacion a datetime si es una cadena
+    if isinstance(solution[0].get("fecha_creacion"), str):
+        try:
+            solution[0]["fecha_creacion"] = datetime.strptime(solution[0]["fecha_creacion"], "%Y-%m-%d")
+        except ValueError:
+            flash("Formato de fecha inválido en la solución", "danger")
+            return redirect(url_for("vistaSolucion.list_solucion"))
+
+    form = SolucionForm(data=solution[0])
+
+    if request.method == "POST" and form.validate_on_submit():
+        payload = {
+            "titulo": form.titulo.data,
+            "descripcion": form.descripcion.data,
+            "fecha_creacion": form.fecha_creacion.data.strftime('%Y-%m-%d') if form.fecha_creacion.data else None,
+        }
+        solucion_client.update("codigo_solucion", codigo_solucion, payload)
+        flash("Solución actualizada correctamente", "success")
+        return redirect(url_for("vistaSolucion.list_solucion"))
+
+    return render_template("update_soluciones.html", form=form, solution=solution[0])
+
+
+
+@soluciones_bp.route("/delete/<int:codigo_solucion>", methods=["GET", "POST"])
+@login_required
+def delete_solucion(codigo_solucion):
+    solution = solucion_client.get_by_id("codigo_solucion", codigo_solucion)
+    if not solution:
+        flash("Solución no encontrada", "error")
+        return redirect(url_for("vistaSolucion.list_solucion"))
+
+    form = SolucionForm()
 
     if request.method == "POST":
-        data = {
-            "titulo": request.form.get("titulo"),
-            "descripcion": request.form.get("descripcion"),
-        }
-        solucion_service.update(solucion_id, data)
-        flash("Solution updated successfully", "success")
-        return redirect(url_for("solucion.list_solutions"))
+        solucion_client.delete("codigo_solucion", codigo_solucion)
+        flash("Solución eliminada correctamente", "success")
+        return redirect(url_for("vistaSolucion.list_solucion"))
 
-    return render_template("soluciones/update.html", solution=solution)
+    return render_template("delete_soluciones.html", form=form, solucion=solution[0])
 
 
-# ===========================
-# POST - Delete a solution
-# ===========================
-@soluciones_bp.route("/delete/<int:solucion_id>", methods=["POST"])
+@soluciones_bp.route("/detail/<int:codigo_solucion>", methods=["GET"])
 @login_required
-def delete_solution(solucion_id):
-    solucion_service.delete(solucion_id)
-    flash("Solution deleted successfully", "success")
-    return redirect(url_for("solucion.list_solutions"))
-"""
+def detail_solucion(codigo_solucion):
+    solution = solucion_client.get_by_id("codigo_solucion", codigo_solucion)
+    if not solution:
+        flash("Solución no encontrada", "error")
+        return redirect(url_for("vistaSolucion.list_solucion"))
+    return render_template("detail_soluciones.html", solucion=solution[0])
+
+
+@soluciones_bp.route("/confirmar/<int:codigo_solucion>", methods=["GET", "POST"])
+@login_required
+def confirmar_solucion(codigo_solucion):
+    solution = solucion_client.get_by_id("codigo_solucion", codigo_solucion)
+    if not solution:
+        flash("Solución no encontrada", "error")
+        return redirect(url_for("vistaSolucion.list_solucion"))
+
+    form = SolucionForm()
+
+    if request.method == "POST" and request.form.get("confirmar"):
+        mensaje_experto = request.form.get("mensaje_experto")
+        solucion_client.confirm("codigo_solucion", codigo_solucion)
+        flash("Solución confirmada exitosamente", "success")
+        return render_template("confirmar_soluciones.html", form=form, solucion=solution[0], mensaje_experto=mensaje_experto)
+
+    return render_template("confirmar_soluciones.html", form=form, solucion=solution[0])

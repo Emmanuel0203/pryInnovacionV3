@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, session, redirect, url_for, flash
+from flask_login import current_user, login_required
 from utils.api_client import APIClient
 from config_flask import API_CONFIG
 from datetime import datetime
@@ -7,23 +8,25 @@ dashboard_bp = Blueprint('dashboard', __name__)
 api_client = APIClient(API_CONFIG['base_url'])
 
 @dashboard_bp.route('/dashboard')
+@login_required
 def index():
     print('Accediendo al dashboard...')
     print(f'Contenido actual de la sesión: {dict(session)}')
-    user_email = session.get('user_email')
+    # Usar current_user para obtener el email autenticado
+    user_email = getattr(current_user, 'email', None)
     if not user_email:
-        print('No se encontró user_email en la sesión')
+        print('No se encontró usuario autenticado')
         return redirect(url_for('login.login_view'))
     try:
         # Verificar si la sesión está activa
         if not session.get('user_email'):
             return redirect(url_for('login.login_view'))
 
-        # Obtener datos del usuario desde la sesión
+        # Obtener datos del usuario autenticado
         user_data = {
-            'email': session.get('user_email'),
-            'name': session.get('user_name', 'Usuario'),
-            'role': session.get('user_role', 'Usuario')
+            'email': user_email,
+            'name': getattr(current_user, 'name', 'Usuario'),
+            'role': getattr(current_user, 'role', 'Usuario')
         }
         
         # Inicializar contadores
