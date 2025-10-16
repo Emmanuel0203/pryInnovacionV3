@@ -26,20 +26,69 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 @login_required
 def list_ideas():
     try:
+        # Obtener todas las ideas
         ideas = idea_client.get_all()
         focos = idea_client.fetch_endpoint_data("foco_innovacion")
         tipos = idea_client.fetch_endpoint_data("tipo_innovacion")
 
+        # ✅ OBTENER PARÁMETROS DE FILTRADO DE LA URL
+        tipo_filtro = request.args.get("tipo_innovacion", "").strip()
+        foco_filtro = request.args.get("foco_innovacion", "").strip()
+        estado_filtro = request.args.get("estado", "").strip()
+
+        # ✅ APLICAR FILTROS
+        ideas_filtradas = ideas
+
+        # Filtrar por tipo de innovación
+        if tipo_filtro:
+            ideas_filtradas = [
+                idea for idea in ideas_filtradas 
+                if str(idea.get("id_tipo_innovacion", "")) == tipo_filtro
+            ]
+
+        # Filtrar por foco de innovación
+        if foco_filtro:
+            ideas_filtradas = [
+                idea for idea in ideas_filtradas 
+                if str(idea.get("id_foco_innovacion", "")) == foco_filtro
+            ]
+
+        # Filtrar por estado
+        if estado_filtro:
+            # Convertir el filtro a booleano
+            if estado_filtro == "1":
+                # Ideas aprobadas (estado = True)
+                ideas_filtradas = [
+                    idea for idea in ideas_filtradas 
+                    if idea.get("estado") is True or idea.get("estado") == 1 or idea.get("estado") == "1"
+                ]
+            elif estado_filtro == "0":
+                # Ideas pendientes (estado = False)
+                ideas_filtradas = [
+                    idea for idea in ideas_filtradas 
+                    if idea.get("estado") is False or idea.get("estado") == 0 or idea.get("estado") == "0"
+                ]
+
+        # Preparar el formulario
         form = IdeaForm()
-        form.load_dynamic_choices(focos, tipos)
+        form.id_foco_innovacion.choices = [(f["id_foco_innovacion"], f["name"]) for f in focos]
+        form.id_tipo_innovacion.choices = [(t["id_tipo_innovacion"], t["name"]) for t in tipos]
 
     except Exception as e:
         current_app.logger.exception("Error al obtener ideas")
         flash(f"Error al obtener las ideas: {e}", "danger")
-        ideas, focos, tipos = [], [], []
+        ideas_filtradas, focos, tipos = [], [], []
         form = IdeaForm()
 
-    return render_template("list_ideas.html", ideas=ideas, focos=focos, tipos=tipos, form=form)
+    # ✅ PASAR LAS IDEAS FILTRADAS AL TEMPLATE
+    return render_template(
+        "list_ideas.html", 
+        ideas=ideas_filtradas,
+        focos=focos, 
+        tipos=tipos, 
+        form=form
+    )
+
 
 
 @ideas_bp.route("/<int:codigo_idea>", methods=["GET"])
@@ -69,6 +118,17 @@ def update_idea(codigo_idea):
 
     form = IdeaForm(data=idea[0])
 
+    # ✅ CARGAR LAS OPCIONES DINÁMICAS (ESTO FALTABA)
+    try:
+        focos = idea_client.fetch_endpoint_data("foco_innovacion")
+        tipos = idea_client.fetch_endpoint_data("tipo_innovacion")
+        form.id_foco_innovacion.choices = [(f["id_foco_innovacion"], f["name"]) for f in focos]
+        form.id_tipo_innovacion.choices = [(t["id_tipo_innovacion"], t["name"]) for t in tipos]
+    except Exception as e:
+        flash("Error al cargar focos o tipos de innovación", "danger")
+        form.id_foco_innovacion.choices = []
+        form.id_tipo_innovacion.choices = []
+
     if request.method == "POST" and form.validate_on_submit():
         payload = {
             "id_tipo_innovacion": form.id_tipo_innovacion.data,
@@ -84,7 +144,6 @@ def update_idea(codigo_idea):
         return redirect(url_for("ideas.list_ideas"))
 
     return render_template("update_ideas.html", form=form, idea=idea[0])
-
 
 @ideas_bp.route("/delete/<int:codigo_idea>", methods=["GET", "POST"])
 @login_required
@@ -122,48 +181,126 @@ def confirmar_idea(codigo_idea):
 @login_required
 def create_idea():
     form = IdeaForm()
+    print("🧩 Iniciando creación de idea...")
 
+    # ----- Cargar focos y tipos -----
     try:
         focos = idea_client.fetch_endpoint_data("foco_innovacion")
         tipos = idea_client.fetch_endpoint_data("tipo_innovacion")
         form.id_foco_innovacion.choices = [(f["id_foco_innovacion"], f["name"]) for f in focos]
         form.id_tipo_innovacion.choices = [(t["id_tipo_innovacion"], t["name"]) for t in tipos]
-    except Exception:
+        print("✅ Focos y tipos cargados correctamente.")
+    except Exception as e:
+        print(f"⚠️ Error al cargar focos/tipos: {e}")
         flash("Error al cargar focos o tipos de innovación", "danger")
         form.id_foco_innovacion.choices = []
         form.id_tipo_innovacion.choices = []
 
+    # ----- POST -----
     if form.validate_on_submit():
-        archivo_url = None
+        print("✅ Formulario validado correctamente")
+        print(f"📄 Datos del formulario: {form.data}")
+
+        # ----- Guardar archivo -----
+        archivo_url = ""  # ✅ String vacío en lugar de None
         if form.archivo_multimedia.data:
             archivo = form.archivo_multimedia.data
             filename = secure_filename(archivo.filename)
             path = os.path.join(UPLOAD_FOLDER, filename)
-            archivo.save(path)
-            archivo_url = f"/{path}"
+            print(f"📁 Guardando archivo en: {path}")
+            try:
+                archivo.save(path)
+                archivo_url = f"/{path}"
+                print(f"✅ Archivo guardado correctamente en {archivo_url}")
+            except Exception as e:
+                print(f"❌ Error al guardar archivo: {e}")
+                flash("Error al guardar el archivo.", "danger")
 
+        # ----- Construir payload -----
+        # ✅ CORREGIDO: Manejar valores None y campos opcionales
+        fecha_creacion = form.fecha_creacion.data if form.fecha_creacion.data else datetime.now()
+        
         payload = {
-            "id_tipo_innovacion": form.id_tipo_innovacion.data,
-            "id_foco_innovacion": form.id_foco_innovacion.data,
-            "titulo": form.titulo.data,
-            "descripcion": form.descripcion.data,
-            "fecha_creacion": form.fecha_creacion.data.strftime("%Y-%m-%dT%H:%M:%S")
-            if form.fecha_creacion.data else datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
-            "palabras_claves": form.palabras_claves.data,
-            "recursos_requeridos": form.recursos_requeridos.data,
-            "archivo_multimedia": archivo_url,
-            "creador_por": session.get("user_email"),
+            "id_tipo_innovacion": int(form.id_tipo_innovacion.data),
+            "id_foco_innovacion": int(form.id_foco_innovacion.data),
+            "titulo": str(form.titulo.data).strip(),
+            "descripcion": str(form.descripcion.data).strip(),
+            "fecha_creacion": fecha_creacion.strftime("%Y-%m-%dT%H:%M:%S"),
+            "palabras_claves": str(form.palabras_claves.data).strip(),
+            "recursos_requeridos": int(form.recursos_requeridos.data),
+            "archivo_multimedia": archivo_url,  # String vacío si no hay archivo
+            "creador_por": session.get("user_email", ""),
             "estado": True
         }
 
-        response = idea_client.create(payload)
-        if response and response.status_code == 201:
-            flash("Idea creada exitosamente", "success")
-            return redirect(url_for("ideas.list_ideas"))
-        else:
-            flash("Error al crear la idea", "danger")
+        # ✅ Opcional: Remover campos vacíos si tu API lo requiere
+        # payload = {k: v for k, v in payload.items() if v not in (None, "", [])}
+
+        print("🧾 Payload a enviar a la API:")
+        for k, v in payload.items():
+            print(f"   {k}: {v} (type: {type(v).__name__})")
+
+        # ----- Enviar a la API -----
+        try:
+            import json
+            print("\n" + "=" * 60)
+            print("📤 JSON COMPLETO A ENVIAR:")
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+            print("=" * 60 + "\n")
+
+            response = idea_client.insert_data(payload)
+            print(f"📬 Respuesta cruda del cliente: {response}")
+
+            # Si la respuesta es un dict
+            if isinstance(response, dict):
+                estado = response.get("estado") or response.get("status")
+                mensaje = response.get("mensaje") or response.get("message") or str(response)
+                print(f"📦 Respuesta procesada (dict): estado={estado}, mensaje={mensaje}")
+
+                if estado in (200, 201) or "creada" in mensaje.lower() or "success" in mensaje.lower():
+                    flash("Idea creada exitosamente ✅", "success")
+                    print("✅ Idea creada correctamente.")
+                    return redirect(url_for("ideas.list_ideas"))
+                else:
+                    error_detail = response.get("error") or response.get("detail") or mensaje
+                    print(f"⚠️ Error: API devolvió respuesta no exitosa → {response}")
+                    flash(f"Error al crear la idea: {error_detail}", "danger")
+
+            # Si la respuesta es un objeto Response de requests
+            elif hasattr(response, "status_code"):
+                print(f"📦 Respuesta HTTP: {response.status_code} - {response.text}")
+                if response.status_code in (200, 201):
+                    flash("Idea creada exitosamente ✅", "success")
+                    print("✅ Idea creada correctamente.")
+                    return redirect(url_for("ideas.list_ideas"))
+                else:
+                    print(f"⚠️ Error HTTP {response.status_code}: {response.text}")
+                    flash(f"Error HTTP {response.status_code} al crear la idea.", "danger")
+
+            # Si response es None (error en APIClient)
+            elif response is None:
+                print("❌ La API devolvió None - verifica los logs del servidor .NET")
+                flash("Error de conexión con el servidor. Verifica que la API esté funcionando.", "danger")
+            
+            else:
+                print("⚠️ Respuesta inesperada del cliente:", type(response))
+                flash("Respuesta inesperada del servidor.", "danger")
+
+        except Exception as e:
+            print(f"💥 Excepción al enviar datos al servidor: {e}")
+            import traceback
+            traceback.print_exc()
+            flash("Error al guardar la idea en el servidor", "danger")
+
+    elif request.method == "POST":
+        print("❌ Formulario no válido.")
+        print(f"Errores: {form.errors}")
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(f"Error en {field}: {error}", "danger")
 
     return render_template("create_ideas.html", form=form)
+
 
 
 # Secciones extra
@@ -376,5 +513,3 @@ def mercado():
         ideas_mercado = []
 
     return render_template("mercado_ideas.html", ideas_mercado=ideas_mercado)
-
-

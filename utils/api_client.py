@@ -1,4 +1,4 @@
-# api_client.py - ADAPTADO A TU NUEVA API
+# api_client.py - CORREGIDO
 import requests
 import os
 
@@ -31,30 +31,14 @@ class APIClient:
 
     def _wrap_payload(self, data_list):
         """
-        Construye el JSON con el formato esperado por la API.
-
-        Parameters
-        ----------
-        data_list : dict | list[dict]
-            Los registros a insertar/actualizar. Puede ser un único diccionario 
-            (un solo registro) o una lista de diccionarios (varios registros).
-
-        Returns
-        -------
-        dict
-            Un JSON en el formato requerido por la API, con la estructura:
-            {
-                "tabla": "<nombre de la tabla>",
-                "esquema": "<nombre del esquema>",
-                "datos": [ {...}, {...}, ... ]
-            }
+        Construye el JSON con el formato esperado por ALGUNOS endpoints de la API.
+        NOTA: No todos los endpoints requieren este formato.
         """
         return {
             "tabla": self.table_name,
             "esquema": self.schema,
             "datos": data_list if isinstance(data_list, list) else [data_list]
         }
-
 
     def get_data(self, **kwargs):
         """Obtiene datos de la tabla."""
@@ -70,21 +54,65 @@ class APIClient:
         return None
 
     def insert_data(self, json_data):
-        """Inserta datos en la tabla (requiere lista o dict)."""
-        payload = self._wrap_payload(json_data)
+        """
+        Inserta datos en la tabla.
+        Envía el objeto directamente sin envolver (formato esperado por .NET).
+        
+        Parameters
+        ----------
+        json_data : dict
+            Diccionario con los datos del nuevo registro.
+            
+        Returns
+        -------
+        dict or None
+            Respuesta de la API o None si hay error.
+        """
+        # ✅ CORREGIDO: Enviar datos directamente, sin _wrap_payload
+        return self._make_request("POST", self.table_name, payload=json_data)
+
+    def insert_data_bulk(self, json_data_list):
+        """
+        Inserta múltiples registros (si la API soporta bulk insert).
+        Usa el formato envuelto con tabla/esquema/datos.
+        
+        Parameters
+        ----------
+        json_data_list : list[dict]
+            Lista de diccionarios con los datos a insertar.
+            
+        Returns
+        -------
+        dict or None
+            Respuesta de la API o None si hay error.
+        """
+        payload = self._wrap_payload(json_data_list)
         return self._make_request("POST", self.table_name, payload=payload)
 
     def update_data(self, record_id, json_data):
         """Actualiza datos de un registro específico."""
-        payload = self._wrap_payload(json_data)
+        # Si tu API .NET requiere el objeto directo, usa:
         endpoint = f"{self.table_name}/{record_id}"
-        return self._make_request("PUT", endpoint, payload=payload)
+        return self._make_request("PUT", endpoint, payload=json_data)
+        
+        # Si requiere formato envuelto, usa:
+        # payload = self._wrap_payload(json_data)
+        # return self._make_request("PUT", endpoint, payload=payload)
+
+    def update(self, id_field, record_id, json_data):
+        """
+        Alias mejorado para update_data que acepta el campo ID explícitamente.
+        """
+        return self.update_data(record_id, json_data)
 
     def delete_data(self, record_id):
         """Elimina un registro específico."""
-        payload = self._wrap_payload({"id": record_id})
         endpoint = f"{self.table_name}/{record_id}"
-        return self._make_request("DELETE", endpoint, payload=payload)
+        return self._make_request("DELETE", endpoint)
+
+    def delete(self, id_field, record_id):
+        """Alias para delete_data que acepta el campo ID explícitamente."""
+        return self.delete_data(record_id)
 
     def fetch_endpoint_data(self, endpoint):
         """
@@ -103,7 +131,13 @@ class APIClient:
         try:
             response = requests.get(f"{self.base_url}/{endpoint}", timeout=10)
             response.raise_for_status()
-            return response.json().get("datos", [])
+            data = response.json()
+            # Manejar tanto respuestas con "datos" como respuestas directas
+            if isinstance(data, dict) and "datos" in data:
+                return data["datos"]
+            elif isinstance(data, list):
+                return data
+            return []
         except requests.exceptions.RequestException as e:
             print(f"[APIClient] Error fetching data from endpoint '{endpoint}': {e}")
             return []
@@ -125,7 +159,11 @@ class APIClient:
         try:
             endpoint = f"{self.table_name}/{resource}" if resource else self.table_name
             response = self._make_request("GET", endpoint)
-            return response.get("datos", []) if response else []
+            if response and "datos" in response:
+                return response["datos"]
+            elif isinstance(response, list):
+                return response
+            return []
         except Exception as e:
             print(f"Error fetching records: {e}")
             return []
@@ -137,18 +175,20 @@ class APIClient:
         Parameters
         ----------
         id_field : str
-            The name of the ID field (e.g., 'codigo_solucion').
+            The name of the ID field (e.g., 'codigo_idea').
         record_id : int
             The ID of the record to fetch.
 
         Returns
         -------
-        dict or None
-            The record if found, otherwise None.
+        list or None
+            Lista con el registro si se encuentra, o None si hay error.
         """
         endpoint = f"{self.table_name}?{id_field}={record_id}"
         response = self._make_request("GET", endpoint)
-        return response.get("datos", []) if response else None
+        if response and "datos" in response:
+            return response["datos"]
+        return None
 
     def confirm(self, id_field, record_id):
         """
@@ -157,7 +197,7 @@ class APIClient:
         Parameters
         ----------
         id_field : str
-            The name of the ID field (e.g., 'codigo_solucion').
+            The name of the ID field (e.g., 'codigo_idea').
         record_id : int
             The ID of the record to confirm.
 
@@ -171,34 +211,13 @@ class APIClient:
         return self._make_request("POST", endpoint, payload=payload)
 
     def get_ideas(self):
-        """
-        Fetches all ideas from the API.
-
-        Returns
-        -------
-        list
-            A list of ideas fetched from the API, or an empty list if an error occurs.
-        """
+        """Fetches all ideas from the API."""
         return self.fetch_endpoint_data("idea")
 
     def get_oportunidades(self):
-        """
-        Fetches all opportunities from the API.
-
-        Returns
-        -------
-        list
-            A list of opportunities fetched from the API, or an empty list if an error occurs.
-        """
+        """Fetches all opportunities from the API."""
         return self.fetch_endpoint_data("oportunidad")
 
     def get_soluciones(self):
-        """
-        Fetches all solutions from the API.
-
-        Returns
-        -------
-        list
-            A list of solutions fetched from the API, or an empty list if an error occurs.
-        """
+        """Fetches all solutions from the API."""
         return self.fetch_endpoint_data("solucion")

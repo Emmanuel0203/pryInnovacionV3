@@ -38,7 +38,9 @@
                                 <select name="tipo_innovacion" id="tipo_innovacion" class="form-select">
                                     <option value="">Todos</option>
                                     {% for tipo in tipos %}
-                                        <option value="{{ tipo.id_tipo_innovacion }}" {% if selected_tipo == tipo.id_tipo_innovacion|string %}selected{% endif %}>{{ tipo.nombre }}</option>
+                                        <option value="{{ tipo.id_tipo_innovacion }}" {% if selected_tipo == tipo.id_tipo_innovacion|string %}selected{% endif %}>
+                                            {{ tipo.name or tipo.nombre or tipo.tipo or 'Sin nombre' }}
+                                        </option>
                                     {% endfor %}
                                 </select>
                             </div>
@@ -47,7 +49,9 @@
                                 <select name="foco_innovacion" id="foco_innovacion" class="form-select">
                                     <option value="">Todos</option>
                                     {% for foco in focos %}
-                                        <option value="{{ foco.id_foco_innovacion }}" {% if selected_foco == foco.id_foco_innovacion|string %}selected{% endif %}>{{ foco.nombre }}</option>
+                                        <option value="{{ foco.id_foco_innovacion }}" {% if selected_foco == foco.id_foco_innovacion|string %}selected{% endif %}>
+                                            {{ foco.name or foco.nombre or foco.foco or 'Sin nombre' }}
+                                        </option>
                                     {% endfor %}
                                 </select>
                             </div>
@@ -93,7 +97,7 @@
                                 <tbody>
                                     {% for idea in ideas %}
                                     <tr>
-                                        <td><a href="{{ url_for('ideas.view_idea', codigo_idea=idea.codigo_idea) }}">{{ idea.titulo }}</a></td>
+                                        <td><a href="{{ url_for('ideas.get_idea', codigo_idea=idea.codigo_idea) }}">{{ idea.titulo }}</a></td>
                                         <td>{{ idea.descripcion[:80] }}{% if idea.descripcion|length > 80 %}...{% endif %}</td>
                                         <td>{{ idea.autor_nombre or 'N/A' }}</td>
                                         <td>{{ idea.tipo_innovacion_nombre or 'N/A' }}</td>
@@ -107,7 +111,7 @@
                                             {% endif %}
                                         </td>
                                         <td>
-                                            <a href="{{ url_for('ideas.view_idea', codigo_idea=idea.codigo_idea) }}" class="btn btn-sm btn-outline-primary waves-effect waves-light" title="Ver">
+                                            <a href="{{ url_for('ideas.get_idea', codigo_idea=idea.codigo_idea) }}" class="btn btn-sm btn-outline-primary waves-effect waves-light" title="Ver">
                                                 <i class="ri-eye-line"></i>
                                             </a>
                                             {# Solo mostrar botones de editar/eliminar si es el propietario #}
