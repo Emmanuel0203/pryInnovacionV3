@@ -104,6 +104,26 @@
                         {% endif %}
                     </div>
 
+                    <div class="mb-3">
+                        {{ form.tipo_innovacion.label(class="form-label") }}
+                        {{ form.tipo_innovacion(class="form-control" + (" is-invalid" if form.tipo_innovacion.errors else "")) }}
+                        {% if form.tipo_innovacion.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.tipo_innovacion.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.foco_innovacion.label(class="form-label") }}
+                        {{ form.foco_innovacion(class="form-control" + (" is-invalid" if form.foco_innovacion.errors else "")) }}
+                        {% if form.foco_innovacion.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.foco_innovacion.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
                     <div class="form-group mb-0">
                         <button type="submit" class="btn btn-primary">Guardar Oportunidad</button>
                         <a href="{{ url_for('vistaOportunidad.list_oportunidades') }}" class="btn btn-secondary">Cancelar</a>

@@ -1,6 +1,6 @@
 # forms/formsSoluciones/formsSoluciones.py
 from flask_wtf import FlaskForm
-from wtforms import StringField, TextAreaField, SelectField, FileField, DateField, SubmitField
+from wtforms import StringField, TextAreaField, SelectField, FileField, IntegerField, SubmitField
 from wtforms.validators import DataRequired, Length
 from flask_wtf.file import FileAllowed
 
@@ -27,9 +27,8 @@ class SolucionForm(FlaskForm):
         Length(max=200, message='Las palabras clave no deben exceder los 200 caracteres')
     ])
     
-    recursos_requeridos = TextAreaField('Recursos Requeridos', validators=[
-        DataRequired(message='Los recursos requeridos son necesarios'),
-        Length(max=500, message='Los recursos requeridos no deben exceder los 500 caracteres')
+    recursos_requeridos = IntegerField('Recursos Requeridos', validators=[
+        DataRequired(message='Los recursos requeridos son necesarios')
     ])
     
     tipo_innovacion = SelectField('Tipo de Innovación', coerce=int, validators=[
@@ -41,13 +40,11 @@ class SolucionForm(FlaskForm):
     ])
 
     archivo_multimedia = FileField('Archivo', validators=[
-        FileAllowed(['jpg', 'png', 'pdf'], 'Solo imágenes o documentos.')
+        FileAllowed(['jpg', 'jpeg', 'png', 'pdf'], 'Solo imágenes o documentos.')
     ])
     
-    fecha_creacion = DateField('Fecha de creación', format='%Y-%m-%d')
-    
     submit = SubmitField('Guardar')
-
+    
     def load_dynamic_choices(self, focos, tipos):
         """
         Load dynamic choices for the form fields.

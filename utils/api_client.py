@@ -8,25 +8,35 @@ class APIClient:
     def __init__(self, table_name: str, schema: str = "por defecto"):
         self.table_name = table_name
         self.schema = schema
-        self.base_url = os.getenv("BACKEND_LOCAL_URL")  # ej: http://localhost:5186/api/sgv
+        self.base_url = os.getenv("BACKEND_LOCAL_URL")  # ej: http://localhost:5186/api/
+        # print(f"[DEBUG] URL base configurada: {self.base_url}")
 
-    def _make_request(self, method="GET", endpoint="", payload=None, **params):
-        """Hace una petición a la API con el formato esperado."""
+    def _make_request(self, method="GET", endpoint="", payload=None, files=None, **params):
         url = f"{self.base_url}/{endpoint}" if endpoint else f"{self.base_url}/{self.table_name}"
+        headers = {"Content-Type": "application/json"} if not files else None
+        # print(f"[DEBUG] Enviando solicitud {method} a {url} con headers: {headers}")
 
         try:
             if method.upper() == "GET":
-                response = requests.get(url, params=params, timeout=10)
-            elif method.upper() in ["POST", "PUT", "DELETE"]:
-                response = requests.request(method, url, json=payload, timeout=10)
+                response = requests.get(url, params=params, headers=headers, timeout=10)
+            elif method.upper() == "POST":
+                if files:
+                    response = requests.post(url, data=payload, files=files, timeout=15)
+                else:
+                    response = requests.post(url, json=payload, headers=headers, timeout=10)
+            elif method.upper() == "PUT":
+                response = requests.put(url, json=payload, headers=headers, timeout=10)
+            elif method.upper() == "DELETE":
+                response = requests.delete(url, headers=headers, timeout=10)
             else:
                 raise ValueError(f"Método HTTP no soportado: {method}")
 
             response.raise_for_status()
+            print(f"[DEBUG] Respuesta recibida: {response.status_code}")
             return response.json()
 
         except requests.exceptions.RequestException as e:
-            print(f"[APIClient] Error en {method} {url}: {e}")
+            print(f"[ERROR] Error en {method} {url}: {e}")
             return None
 
     def _wrap_payload(self, data_list):
@@ -41,20 +51,10 @@ class APIClient:
 
         Returns
         -------
-        dict
-            Un JSON en el formato requerido por la API, con la estructura:
-            {
-                "tabla": "<nombre de la tabla>",
-                "esquema": "<nombre del esquema>",
-                "datos": [ {...}, {...}, ... ]
-            }
+        list
+            Un arreglo de diccionarios con los datos a insertar/actualizar.
         """
-        return {
-            "tabla": self.table_name,
-            "esquema": self.schema,
-            "datos": data_list if isinstance(data_list, list) else [data_list]
-        }
-
+        return data_list if isinstance(data_list, list) else [data_list]
 
     def get_data(self, **kwargs):
         """Obtiene datos de la tabla."""
@@ -70,21 +70,27 @@ class APIClient:
         return None
 
     def insert_data(self, json_data):
-        """Inserta datos en la tabla (requiere lista o dict)."""
-        payload = self._wrap_payload(json_data)
-        return self._make_request("POST", self.table_name, payload=payload)
+        # Enviar el payload directamente como un objeto JSON
+        print(f"[DEBUG] Payload enviado: {json_data}")
+        response = self._make_request("POST", self.table_name, payload=json_data)
+        if response:
+            print(f"[DEBUG] Respuesta de la API: {response}")
+        else:
+            print("[ERROR] No se recibió respuesta de la API")
+        return response
 
     def update_data(self, record_id, json_data):
         """Actualiza datos de un registro específico."""
         payload = self._wrap_payload(json_data)
         endpoint = f"{self.table_name}/{record_id}"
+        print(f"[DEBUG] Payload enviado para actualización: {payload}")
         return self._make_request("PUT", endpoint, payload=payload)
 
     def delete_data(self, record_id):
         """Elimina un registro específico."""
-        payload = self._wrap_payload({"id": record_id})
         endpoint = f"{self.table_name}/{record_id}"
-        return self._make_request("DELETE", endpoint, payload=payload)
+        print(f"[DEBUG] Eliminando registro con ID: {record_id}")
+        return self._make_request("DELETE", endpoint)
 
     def fetch_endpoint_data(self, endpoint):
         """
@@ -202,3 +208,79 @@ class APIClient:
             A list of solutions fetched from the API, or an empty list if an error occurs.
         """
         return self.fetch_endpoint_data("solucion")
+
+    def update_by_key(self, key_name, key_value, json_data, schema=None, campos_encriptar=None):
+        """
+        Actualiza un registro específico en la tabla usando el método ActualizarAsync.
+
+        Parameters
+        ----------
+        key_name : str
+            El nombre del campo clave (e.g., 'codigo_solucion').
+        key_value : str | int
+            El valor del campo clave (e.g., 13).
+        json_data : dict
+            Los datos a actualizar en formato JSON.
+        schema : str, optional
+            Esquema de la base de datos (e.g., 'public').
+        campos_encriptar : str, optional
+            Campos a encriptar (e.g., 'password,pin').
+
+        Returns
+        -------
+        dict or None
+            La respuesta de la API si es exitosa, de lo contrario None.
+        """
+        endpoint = f"{self.table_name}/{key_name}/{key_value}"
+        params = {}
+        if schema:
+            params["esquema"] = schema
+        if campos_encriptar:
+            params["camposEncriptar"] = campos_encriptar
+
+        return self._make_request("PUT", endpoint, payload=json_data, **params)
+
+    def get_by_key(self, key_name, key_value):
+        """
+        Obtiene un registro específico usando el método ObtenerPorClaveAsync.
+
+        Parameters
+        ----------
+        key_name : str
+            El nombre del campo clave (e.g., 'codigo_solucion').
+        key_value : str | int
+            El valor del campo clave (e.g., 13).
+
+        Returns
+        -------
+        dict or None
+            El registro si se encuentra, de lo contrario None.
+        """
+        endpoint = f"{self.table_name}/{key_name}/{key_value}"
+        response = self._make_request("GET", endpoint)
+        return response.get("datos", []) if response else None
+
+    def delete_by_key(self, key_name, key_value, schema=None):
+        """
+        Elimina un registro específico usando el método EliminarAsync.
+
+        Parameters
+        ----------
+        key_name : str
+            El nombre del campo clave (e.g., 'codigo_solucion').
+        key_value : str | int
+            El valor del campo clave (e.g., 13).
+        schema : str, optional
+            Esquema de la base de datos (e.g., 'public').
+
+        Returns
+        -------
+        dict or None
+            La respuesta de la API si es exitosa, de lo contrario None.
+        """
+        endpoint = f"{self.table_name}/{key_name}/{key_value}"
+        params = {}
+        if schema:
+            params["esquema"] = schema
+
+        return self._make_request("DELETE", endpoint, **params)

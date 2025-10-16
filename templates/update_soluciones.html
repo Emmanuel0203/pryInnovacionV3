@@ -45,8 +45,8 @@
                     <!-- Botones -->
                     <div class="form-group mb-0">
                         <div>
-                            <button type="submit" class="btn btn-primary float-right">Guardar</button>
-                            <a href="{{ url_for('soluciones.list_soluciones') }}" class="btn btn-light">Regresar</a>
+                            {{ form.submit(class="btn btn-primary float-right") }}
+                            <a href="{{ url_for('vistaSolucion.list_solucion') }}" class="btn btn-light">Regresar</a>
                         </div>
                     </div>
                 </form>
