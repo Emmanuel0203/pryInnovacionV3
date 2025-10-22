@@ -9,49 +9,102 @@
     <div class="col-sm-6">
         <div class="page-title-box">
             <h4>Ideas</h4>
+            <ol class="breadcrumb m-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('ideas.list_ideas') }}">Ideas</a></li>
+                <li class="breadcrumb-item active">Eliminar</li>
+            </ol>
         </div>
     </div>
 </div>
 
+<!-- Contenedor para notificaciones -->
+<div id="notification-container"></div>
+
 <!-- Formulario de confirmación de eliminación -->
 <div class="row">
-    <div class="col-lg-6">
+    <div class="col-lg-8 offset-lg-2">
         <div class="card">
             <div class="card-body">
-                <h4 class="card-title">Eliminar Idea</h4>
+                <div class="text-center mb-4">
+                    <i class="mdi mdi-alert-circle-outline text-warning" style="font-size: 4rem;"></i>
+                    <h4 class="card-title mt-3">Eliminar Idea</h4>
+                </div>
 
-                <!-- Formulario para confirmar eliminación -->
-                <form method="POST">
+                <!-- Información de la idea -->
+                <div class="alert alert-warning" role="alert">
+                    <h5 class="alert-heading">
+                        <i class="mdi mdi-information-outline me-2"></i>Detalles de la Idea
+                    </h5>
+                    <hr>
+                    <p class="mb-2"><strong>Título:</strong> {{ idea.titulo }}</p>
+                    <p class="mb-2"><strong>Descripción:</strong> {{ idea.descripcion[:100] }}{% if idea.descripcion|length > 100 %}...{% endif %}</p>
+                    {% if idea.fecha_creacion %}
+                    <p class="mb-0"><strong>Fecha de Creación:</strong> {{ idea.fecha_creacion.strftime('%d/%m/%Y') }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- 🔧 FORMULARIO DE ELIMINACIÓN CORREGIDO -->
+                <form method="POST" 
+                      id="form-delete-idea"
+                      action="{{ url_for('ideas.delete_idea', codigo_idea=idea.codigo_idea) }}"> <!-- 🔧 Ruta con parámetro -->
+
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                     <!-- Mensaje de confirmación -->
-                    <p>¿Está seguro de que desea eliminar esta idea?</p>
-                    <p>
-                        Idea: <b>{{ idea.titulo }}</b>
-                    </p>
+                    <div class="alert alert-danger text-center" role="alert">
+                        <i class="mdi mdi-alert me-2"></i>
+                        <strong>¿Está seguro de que desea eliminar esta idea?</strong>
+                        <br><small>Esta acción no se puede deshacer.</small>
+                    </div>
 
-                    <!-- Campo opcional para el mensaje del experto, solo visible si el usuario es experto -->
                     {% if is_experto %}
-                    <div class="form-group">
+                    <div class="form-group mb-3">
                         <label for="mensaje_experto">Mensaje del experto (opcional)</label>
-                        <textarea class="form-control" id="mensaje_experto" name="mensaje_experto" rows="3" placeholder="Escriba un mensaje aquí (opcional)"></textarea>
+                        <textarea class="form-control" 
+                                  id="mensaje_experto" 
+                                  name="mensaje_experto" 
+                                  rows="4" 
+                                  maxlength="500"
+                                  placeholder="Escriba un mensaje explicando el motivo de la eliminación (opcional)"></textarea>
+                        <small class="form-text text-muted">0 / 500 caracteres</small>
                     </div>
                     {% endif %}
 
-                    <!-- Botones para confirmar o regresar -->
-                    <div class="form-group mb-0">
-                        <div>
-                            <!-- Botón para eliminar -->
-                            <button type="submit" class="btn btn-danger float-right">Eliminar</button>
-                            <!-- Botón para regresar a la lista -->
-                            <a href="{{ url_for('lista_ideas') }}" class="btn btn-light">Regresar</a>
+                    <div class="form-group mb-0 mt-4">
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('ideas.list_ideas') }}" class="btn btn-secondary">
+                                <i class="mdi mdi-arrow-left me-1"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="mdi mdi-delete me-1"></i> Confirmar Eliminación
+                            </button>
                         </div>
                     </div>
-
                 </form>
+                <!-- 🔧 FIN DEL FORMULARIO -->
             </div>
         </div>
     </div>
 </div>
 
 {% endblock content %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        $('#mensaje_experto').on('input', function() {
+            const currentLength = $(this).val().length;
+            const maxLength = $(this).attr('maxlength');
+            $(this).next('small').text(`${currentLength} / ${maxLength} caracteres`);
+        });
+
+        $('#form-delete-idea').on('submit', function(e) {
+            const confirmed = confirm('⚠️ ÚLTIMA CONFIRMACIÓN\n\n¿Realmente desea eliminar esta idea? Esta acción es irreversible.');
+            if (!confirmed) {
+                e.preventDefault();
+                return false;
+            }
+        });
+    });
+</script>
+{% endblock extra_js %}

@@ -1,6 +1,10 @@
-# api_client.py - ADAPTADO A TU NUEVA API
+# api_client.py - CORREGIDO CON MANEJO SSL
 import requests
 import os
+import urllib3
+
+# Deshabilitar advertencias de SSL para desarrollo local
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class APIClient:
     """Cliente genérico para interactuar con la API local de Innovación."""
@@ -8,13 +12,27 @@ class APIClient:
     def __init__(self, table_name: str, schema: str = "por defecto"):
         self.table_name = table_name
         self.schema = schema
-        self.base_url = os.getenv("BACKEND_LOCAL_URL")  # ej: http://localhost:5186/api/
-        # print(f"[DEBUG] URL base configurada: {self.base_url}")
+        self.base_url = os.getenv("BACKEND_LOCAL_URL")  # ej: http://localhost:5186/api/sgv
+        
+        # 🔍 DEBUG: Verificar configuración
+        print(f"[DEBUG APIClient] Tabla: {table_name}, Base URL: {self.base_url}")
+        
+        # Crear sesión con configuración SSL
+        self.session = requests.Session()
+        # Deshabilitar verificación SSL solo para desarrollo local
+        self.session.verify = False
 
     def _make_request(self, method="GET", endpoint="", payload=None, files=None, **params):
         url = f"{self.base_url}/{endpoint}" if endpoint else f"{self.base_url}/{self.table_name}"
         headers = {"Content-Type": "application/json"} if not files else None
         # print(f"[DEBUG] Enviando solicitud {method} a {url} con headers: {headers}")
+
+        # 🔍 DEBUG: Ver la petición completa
+        print(f"[DEBUG] Petición {method} a: {url}")
+        if params:
+            print(f"[DEBUG] Parámetros: {params}")
+        if payload:
+            print(f"[DEBUG] Payload: {payload}")
 
         try:
             if method.upper() == "GET":
@@ -31,6 +49,7 @@ class APIClient:
             else:
                 raise ValueError(f"Método HTTP no soportado: {method}")
 
+            print(f"[DEBUG] Status Code: {response.status_code}")
             response.raise_for_status()
             print(f"[DEBUG] Respuesta recibida: {response.status_code}")
             return response.json()
@@ -81,10 +100,11 @@ class APIClient:
 
     def update_data(self, record_id, json_data):
         """Actualiza datos de un registro específico."""
-        payload = self._wrap_payload(json_data)
+        # Si tu API .NET requiere el objeto directo, usa:
         endpoint = f"{self.table_name}/{record_id}"
-        print(f"[DEBUG] Payload enviado para actualización: {payload}")
-        return self._make_request("PUT", endpoint, payload=payload)
+        # usar el parámetro json_data (no existe la variable 'payload' aquí)
+        print(f"[DEBUG] Payload enviado para actualización: {json_data}")
+        return self._make_request("PUT", endpoint, payload=json_data)
 
     def delete_data(self, record_id):
         """Elimina un registro específico."""
@@ -107,9 +127,15 @@ class APIClient:
             A list of data fetched from the API, or an empty list if an error occurs.
         """
         try:
-            response = requests.get(f"{self.base_url}/{endpoint}", timeout=10)
+            response = self.session.get(f"{self.base_url}/{endpoint}", timeout=10)
             response.raise_for_status()
-            return response.json().get("datos", [])
+            data = response.json()
+            # Manejar tanto respuestas con "datos" como respuestas directas
+            if isinstance(data, dict) and "datos" in data:
+                return data["datos"]
+            elif isinstance(data, list):
+                return data
+            return []
         except requests.exceptions.RequestException as e:
             print(f"[APIClient] Error fetching data from endpoint '{endpoint}': {e}")
             return []
@@ -131,7 +157,11 @@ class APIClient:
         try:
             endpoint = f"{self.table_name}/{resource}" if resource else self.table_name
             response = self._make_request("GET", endpoint)
-            return response.get("datos", []) if response else []
+            if response and "datos" in response:
+                return response["datos"]
+            elif isinstance(response, list):
+                return response
+            return []
         except Exception as e:
             print(f"Error fetching records: {e}")
             return []
@@ -143,18 +173,20 @@ class APIClient:
         Parameters
         ----------
         id_field : str
-            The name of the ID field (e.g., 'codigo_solucion').
+            The name of the ID field (e.g., 'codigo_idea').
         record_id : int
             The ID of the record to fetch.
 
         Returns
         -------
-        dict or None
-            The record if found, otherwise None.
+        list or None
+            Lista con el registro si se encuentra, o None si hay error.
         """
         endpoint = f"{self.table_name}?{id_field}={record_id}"
         response = self._make_request("GET", endpoint)
-        return response.get("datos", []) if response else None
+        if response and "datos" in response:
+            return response["datos"]
+        return None
 
     def confirm(self, id_field, record_id):
         """
@@ -163,7 +195,7 @@ class APIClient:
         Parameters
         ----------
         id_field : str
-            The name of the ID field (e.g., 'codigo_solucion').
+            The name of the ID field (e.g., 'codigo_idea').
         record_id : int
             The ID of the record to confirm.
 
@@ -177,25 +209,11 @@ class APIClient:
         return self._make_request("POST", endpoint, payload=payload)
 
     def get_ideas(self):
-        """
-        Fetches all ideas from the API.
-
-        Returns
-        -------
-        list
-            A list of ideas fetched from the API, or an empty list if an error occurs.
-        """
+        """Fetches all ideas from the API."""
         return self.fetch_endpoint_data("idea")
 
     def get_oportunidades(self):
-        """
-        Fetches all opportunities from the API.
-
-        Returns
-        -------
-        list
-            A list of opportunities fetched from the API, or an empty list if an error occurs.
-        """
+        """Fetches all opportunities from the API."""
         return self.fetch_endpoint_data("oportunidad")
 
     def get_soluciones(self):

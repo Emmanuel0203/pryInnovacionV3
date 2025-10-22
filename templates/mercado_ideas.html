@@ -17,7 +17,12 @@
                     <div class="card-text">
                         <small class="text-muted">
                             Creado por: {{ idea.creador_por }}<br>
-                            Fecha: {{ idea.fecha_creacion.strftime('%d/%m/%Y') }}
+                            Fecha: 
+                            {% if idea.fecha_creacion %}
+                                {{ idea.fecha_creacion.strftime('%d/%m/%Y') }}
+                            {% else %}
+                                No disponible
+                            {% endif %}
                         </small>
                     </div>
                     <hr>
@@ -32,7 +37,7 @@
                     </div>
                 </div>
                 <div class="card-footer">
-                    <a href="{{ url_for('ideas.detail_idea', codigo_idea=idea.codigo_idea) }}" class="btn btn-primary">Ver Detalles</a>
+                    <a href="{{ url_for('ideas.get_idea', codigo_idea=idea.codigo_idea) }}" class="btn btn-primary">Ver Detalles</a>
                 </div>
             </div>
         </div>
