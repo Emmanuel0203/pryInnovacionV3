@@ -4,36 +4,69 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Innovación{% endblock %}</title>
+
+    <!-- Bootstrap y FontAwesome -->
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <!-- Archivos CSS locales -->
     <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet" type="text/css" />
     <link href="{{ url_for('static', filename='css/icons.min.css') }}" rel="stylesheet" type="text/css" />
     <link href="{{ url_for('static', filename='css/app.min.css') }}" rel="stylesheet" type="text/css" />
+
+    <!-- Ícono del sitio -->
     <link rel="shortcut icon" href="{{ url_for('static', filename='img/home.ico') }}">
+
+    <!-- Archivo de estilos del logo -->
     <link href="{{ url_for('static', filename='styles/logo.css') }}" rel="stylesheet" type="text/css" />
+
+    <!-- Estilos para centrar el contenido -->
+    <style>
+        /* Centrar el contenido considerando el sidebar */
+        body[data-sidebar="dark"] .main-content {
+            margin-left: 250px;
+            margin-right: 0;
+        }
+
+        /* Para que el sidebar colapse en móviles */
+        @media (max-width: 991px) {
+            body[data-sidebar="dark"] .main-content {
+                margin-left: 0;
+            }
+        }
+
+        #layout-wrapper {
+            width: 100%;
+            overflow-x: hidden;
+        }
+    </style>
+
     {% block head %}{% endblock %}
 </head>
 <body data-sidebar="dark">
     <div id="layout-wrapper">
+        <!-- Header -->
         {% include 'partials/header.html' %}
-        <div class="container-fluid px-0">
-            <div class="row no-gutters mx-0">
-                <div class="col-md-3 col-12 px-0"> <!-- Sidebar -->
-                    {% include 'partials/sidebar.html' %}
-                </div>
-                <div class="col-md-9 col-12 px-0"> <!-- Contenido principal -->
-                    <div class="main-content">
-                        <div class="page-content">
-                            {% block content %}{% endblock %}
-                        </div>
-                        {% include 'partials/footer.html' %}
-                    </div>
+
+        <!-- Sidebar -->
+        {% include 'partials/sidebar.html' %}
+
+        <!-- Contenido principal -->
+        <div class="main-content">
+            <div class="page-content">
+                <div class="container-fluid">
+                    {% block content %}{% endblock %}
                 </div>
             </div>
+            {% include 'partials/footer.html' %}
         </div>
+
+        <!-- Rightbar -->
         {% include 'partials/rightbar.html' %}
         <div class="rightbar-overlay"></div>
     </div>
+
+    <!-- Scripts -->
     <script src="{{ url_for('static', filename='libs/jquery/jquery.min.js') }}"></script>
     <script src="{{ url_for('static', filename='libs/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ url_for('static', filename='libs/metismenu/metisMenu.min.js') }}"></script>
@@ -42,6 +75,7 @@
     <script src="{{ url_for('static', filename='libs/jquery-sparkline/jquery.sparkline.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ajax.js') }}"></script>
+
     {% block scripts %}{% endblock %}
 </body>
 </html>

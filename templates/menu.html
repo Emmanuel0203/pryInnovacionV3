@@ -1,165 +1,168 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <style>
-        /* ...estilos del usuario, igual que el ejemplo proporcionado... */
-        .logo-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .logo-image-sm {
-            width: 50px;
-            height: 45px;
-            margin-top: 10px;
-        }
-        .logo-image-lg {
-            width: 50px;
-            height: 50px;
-            margin-right: 10px;
-        }
-        .logo-text {
-            font-size: 25px;
-            color: #ffffff;
-            font-family: sans-serif;
-            font-style: normal;
-            margin-top: 7%;
-        }
-        .custom-card {
-            background-color: #6C0B99;
-            border: none;
-            transition: transform 0.3s ease, background-color 0.3s ease;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .custom-card:hover {
-            background-color: #6C0B99;
-            transform: scale(1.05);
-            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
-        }
-        .custom-card .card-title,
-        .custom-card .card-text {
-            color: black;
-            font-size: 25px;
-        }
-        .custom-card .module-image {
-            width: 100%;
-            height: 100%;
-            margin-bottom: 10px;
-        }
-        .custom-card:active {
-            background-color: #6C0B99;
-            transform: scale(0.98);
-            box-shadow: 0 3px 5px rgba(0, 0, 0, 0.15);
-        }
-        .custom-card .card-text {
-            font-size: 1.2rem;
-            font-weight: 300;
-            line-height: 1.5;
-        }
-        .custom-card-opportunity {
-            background-color: #FA0C4A;
-            border: none;
-            transition: transform 0.3s ease, background-color 0.3s ease;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .custom-card-opportunity:hover {
-            background-color: #FA0C4A;
-            transform: scale(1.05);
-            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
-        }
-        .custom-card-opportunity .card-title,
-        .custom-card-opportunity .card-text {
-            color: black;
-            font-size: 25px;
-        }
-        .custom-card-opportunity .module-image {
-            width: 100%;
-            height: 100%;
-            margin-bottom: 10px;
-        }
-        .custom-card-opportunity:active {
-            background-color: #FA0C4A;
-            transform: scale(0.98);
-            box-shadow: 0 3px 5px rgba(0, 0, 0, 0.15);
-        }
-        .custom-card-opportunity .card-text {
-            font-size: 1.2rem;
-            font-weight: 300;
-            line-height: 1.5;
-        }
-        .custom-card-solution {
-            background-color: #33CCFF;
-            border: none;
-            transition: transform 0.3s ease, background-color 0.3s ease;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .custom-card-solution:hover {
-            background-color: #33CCFF;
-            transform: scale(1.05);
-            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
-        }
-        .custom-card-solution .card-title,
-        .custom-card-solution .card-text {
-            color: black;
-            font-size: 25px;
-        }
-        .custom-card-solution .module-image {
-            width: 100%;
-            height: 100%;
-            margin-bottom: 10px;
-        }
-        .custom-card-solution:active {
-            background-color: #33CCFF;
-            transform: scale(0.98);
-            box-shadow: 0 3px 5px rgba(0, 0, 0, 0.15);
-        }
-        .custom-card-solution .card-text {
-            font-size: 1.2rem;
-            font-weight: 300;
-            line-height: 1.5;
-        }
-    </style>
+<style>
+    /* Resetea los estilos del contenedor principal */
+    .main-content {
+        margin-left: 250px !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        min-height: calc(100vh - 70px) !important;
+        padding: 0 !important;
+    }
 
-    <div class="main-content">
-        <div class="page-content">
-            <div class="container-fluid">
-                <div class="row">
-                    <div class="col-12">
-                        <div id="result" class="d-flex flex-column align-items-stretch">
-                            <div class="row">
-                                <!-- Tarjetas de módulo -->
-                                <div class="col-lg-4 col-md-6 col-sm-12 d-flex">
-                                    <a href="{{ url_for('ideas.list_ideas') }}" class="card flex-grow-1 custom-card text-white card-module" style="text-decoration: none;">
-                                        <div class="card-body d-flex flex-column justify-content-center align-items-center text-center">
-                                            <img src="/static/img/ideas.png" alt="Módulo de Ideas" class="module-image mb-3">
-                                            <h4 class="card-title">Módulo de ideas</h4>
-                                            <p class="card-text">Creación de ideas.</p>
-                                        </div>
-                                    </a>
-                                </div>
-                                <div class="col-lg-4 col-md-6 col-sm-12 d-flex">
-                                    <a href="{{ url_for('vistaOportunidad.list_oportunidades') }}" class="card flex-grow-1 custom-card-opportunity text-white card-module" style="text-decoration: none;">
-                                        <div class="card-body d-flex flex-column justify-content-center align-items-center text-center">
-                                            <img src="/static/img/oportunidad.png" alt="Módulo de Oportunidades" class="module-image mb-3">
-                                            <h4 class="card-title">Módulo de Oportunidades</h4>
-                                            <p class="card-text">Gestión de oportunidades.</p>
-                                        </div>
-                                    </a>
-                                </div>
-                                <div class="col-lg-4 col-md-6 col-sm-12 d-flex">
-                                    <a href="{{ url_for('vistaSolucion.list_solucion') }}" class="card flex-grow-1 custom-card-solution text-white card-module" style="text-decoration: none;">
-                                        <div class="card-body d-flex flex-column justify-content-center align-items-center text-center">
-                                            <img src="/static/img/soluciones1.png" alt="Módulo de Soluciones" class="module-image mb-3">
-                                            <h4 class="card-title">Módulo de Soluciones</h4>
-                                            <p class="card-text">Gestión de soluciones.</p>
-                                        </div>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    .page-content {
+        width: 100% !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        padding: 40px !important;
+    }
+
+    .page-content .container-fluid {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+        display: flex !important;
+        justify-content: center !important;
+    }
+
+    /* Contenedor de las tarjetas */
+    .modules-row {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 35px;
+        flex-wrap: wrap;
+        max-width: 1300px;
+        margin: 0 auto;
+    }
+
+    /* Tarjetas más grandes */
+    .custom-card,
+    .custom-card-opportunity,
+    .custom-card-solution {
+        width: 290px;
+        height: 390px;
+        text-align: center;
+        color: white;
+        border: none;
+        border-radius: 20px;
+        transition: all 0.3s ease;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        padding: 30px;
+        text-decoration: none;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .custom-card:hover,
+    .custom-card-opportunity:hover,
+    .custom-card-solution:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 12px 24px rgba(0,0,0,0.3);
+    }
+
+    .custom-card { background: linear-gradient(135deg, #6C0B99 0%, #8B1DB8 100%); }
+    .custom-card-opportunity { background: linear-gradient(135deg, #FA0C4A 0%, #FF3366 100%); }
+    .custom-card-solution { background: linear-gradient(135deg, #33CCFF 0%, #66D9FF 100%); }
+
+    .card-body {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+        padding: 0 !important;
+    }
+
+    .module-image {
+        width: 100%;
+        max-width: 200px;
+        height: auto;
+        border-radius: 15px;
+        margin-bottom: 25px;
+    }
+
+    .card-body h4 {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: rgb(0, 0, 0);
+        margin-bottom: 15px;
+    }
+
+    .card-body p {
+        font-size: 1.1rem;
+        font-weight: 300;
+        color: rgba(0, 0, 0, 0.9);
+    }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+        .modules-row {
+            gap: 30px;
+        }
+        
+        .custom-card,
+        .custom-card-opportunity,
+        .custom-card-solution {
+            width: 300px;
+            height: 420px;
+        }
+    }
+
+    @media (max-width: 991px) {
+        .main-content {
+            margin-left: 0 !important;
+        }
+
+        .modules-row {
+            gap: 25px;
+        }
+
+        .custom-card,
+        .custom-card-opportunity,
+        .custom-card-solution {
+            width: 280px;
+            height: 400px;
+        }
+
+        .module-image {
+            width: 100%;
+            max-width: 160px;
+        }
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="modules-row">
+        <!-- Tarjeta Módulo de Ideas -->
+        <a href="{{ url_for('ideas.list_ideas') }}" class="custom-card">
+            <div class="card-body">
+                <img src="/static/img/ideas.png" alt="Módulo de Ideas" class="module-image">
+                <h4>Módulo de ideas</h4>
+                <p>Creación de ideas.</p>
             </div>
-        </div>
+        </a>
+
+        <!-- Tarjeta Módulo de Oportunidades -->
+        <a href="{{ url_for('vistaOportunidad.list_oportunidades') }}" class="custom-card-opportunity">
+            <div class="card-body">
+                <img src="/static/img/oportunidad.png" alt="Módulo de Oportunidades" class="module-image">
+                <h4>Módulo de Oportunidades</h4>
+                <p>Gestión de oportunidades.</p>
+            </div>
+        </a>
+
+        <!-- Tarjeta Módulo de Soluciones -->
+        <a href="{{ url_for('vistaSolucion.list_solucion') }}" class="custom-card-solution">
+            <div class="card-body">
+                <img src="/static/img/soluciones1.png" alt="Módulo de Soluciones" class="module-image">
+                <h4>Módulo de Soluciones</h4>
+                <p>Gestión de soluciones.</p>
+            </div>
+        </a>
     </div>
+</div>
 {% endblock %}
