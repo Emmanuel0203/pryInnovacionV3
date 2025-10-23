@@ -13,12 +13,12 @@ class OportunidadForm(FlaskForm):
 
     titulo = StringField('Título', validators=[
         DataRequired(message='El título es requerido'),
-        Length(min=3, max=100, message='El título debe tener entre 3 y 100 caracteres')
+        Length(min=3, max=200, message='El título debe tener entre 3 y 200 caracteres')
     ])
 
     descripcion = TextAreaField('Descripción', validators=[
         DataRequired(message='La descripción es requerida'),
-        Length(min=10, max=1000, message='La descripción debe tener entre 10 y 1000 caracteres')
+        Length(min=10, max=250, message='La descripción debe tener entre 10 y 250 caracteres')
     ])
 
     palabras_claves = StringField('Palabras Clave', validators=[
@@ -38,13 +38,13 @@ class OportunidadForm(FlaskForm):
         DataRequired(message='Debe seleccionar un foco de innovación')
     ])
 
-    archivo_multimedia = FileField('Archivo', validators=[
-        FileAllowed(['jpg', 'jpeg', 'png', 'pdf'], 'Solo imágenes o documentos.')
+    archivo_multimedia = FileField('Archivo Multimedia', validators=[
+        FileAllowed(['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx'], 'Solo se permiten imágenes y documentos.')
     ])
 
-    creador_por = StringField('Creado Por', validators=[
-        Length(max=50, message='El nombre del creador no debe exceder los 50 caracteres')
-    ])
+    # Nota: creador_por y fecha_creacion son manejados automáticamente por el sistema
+    # creador_por se obtiene de la sesión del usuario
+    # fecha_creacion se establece automáticamente por la base de datos
 
     estado = BooleanField('Estado')
 
