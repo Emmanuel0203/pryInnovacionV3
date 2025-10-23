@@ -55,7 +55,24 @@ class APIClient:
             return response.json()
 
         except requests.exceptions.RequestException as e:
+            # Mostrar información adicional si el servidor devolvió un cuerpo
             print(f"[ERROR] Error en {method} {url}: {e}")
+            try:
+                # Algunos errores HTTP incluyen respuesta con cuerpo
+                if hasattr(e, 'response') and e.response is not None:
+                    print(f"[ERROR] Response status: {e.response.status_code}")
+                    try:
+                        print(f"[ERROR] Response content: {e.response.text}")
+                    except Exception:
+                        print("[ERROR] No se pudo leer el cuerpo de la respuesta")
+            except Exception:
+                pass
+            # También intentar mostrar el contenido si existe la variable `response`
+            try:
+                if 'response' in locals() and response is not None:
+                    print(f"[ERROR] Response content (alt): {response.text}")
+            except Exception:
+                pass
             return None
 
     def _wrap_payload(self, data_list):

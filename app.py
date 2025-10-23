@@ -18,6 +18,7 @@ from views.vistaSoluciones import soluciones_bp
 from views.vistaPerfil import perfil_bp
 from views.vistaDashboard import dashboard_bp
 from views.vistaMain import main_bp
+from views.vistaRegistro import register_bp
 
 
 
@@ -69,6 +70,7 @@ def load_user(email):
 
     # Registrar blueprints
 app.register_blueprint(login_bp, url_prefix='/login')
+app.register_blueprint(register_bp)
 app.register_blueprint(ideas_bp, url_prefix='/ideas')
 app.register_blueprint(oportunidades_bp, url_prefix='/oportunidades')
 app.register_blueprint(soluciones_bp)
