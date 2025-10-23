@@ -9,7 +9,7 @@
                     <h3 class="text-center">Registro de Usuario</h3>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="{{ url_for('login.register_view') }}">
+                    <form method="POST" action="{{ url_for('register.register_view') }}">
                         {{ form.hidden_tag() }}
                         
                         <div class="row">
@@ -36,20 +36,20 @@
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                {{ form.password1.label(class="form-label") }}
-                                {{ form.password1(class="form-control" + (" is-invalid" if form.password1.errors else "")) }}
-                                {% if form.password1.errors %}
-                                    {% for error in form.password1.errors %}
+                                {{ form.password.label(class="form-label") }}
+                                {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else "")) }}
+                                {% if form.password.errors %}
+                                    {% for error in form.password.errors %}
                                         <div class="invalid-feedback">{{ error }}</div>
                                     {% endfor %}
                                 {% endif %}
                             </div>
 
                             <div class="col-md-6 mb-3">
-                                {{ form.password2.label(class="form-label") }}
-                                {{ form.password2(class="form-control" + (" is-invalid" if form.password2.errors else "")) }}
-                                {% if form.password2.errors %}
-                                    {% for error in form.password2.errors %}
+                                {{ form.confirm_password.label(class="form-label") }}
+                                {{ form.confirm_password(class="form-control" + (" is-invalid" if form.confirm_password.errors else "")) }}
+                                {% if form.confirm_password.errors %}
+                                    {% for error in form.confirm_password.errors %}
                                         <div class="invalid-feedback">{{ error }}</div>
                                     {% endfor %}
                                 {% endif %}
