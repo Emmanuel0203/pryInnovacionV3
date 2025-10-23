@@ -84,15 +84,7 @@
                         {% endif %}
                     </div>
 
-                    <div class="mb-3">
-                        {{ form.creador_por.label(class="form-label") }}
-                        {{ form.creador_por(class="form-control" + (" is-invalid" if form.creador_por.errors else "")) }}
-                        {% if form.creador_por.errors %}
-                            <div class="invalid-feedback">
-                                {% for error in form.creador_por.errors %}{{ error }}{% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
+                    {# El creador se asigna desde la sesión en el backend, no es un campo del formulario #}
 
                     <div class="mb-3">
                         {{ form.estado.label(class="form-label") }}

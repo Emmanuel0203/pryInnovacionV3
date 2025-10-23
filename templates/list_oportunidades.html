@@ -1,5 +1,11 @@
 {% extends "base.html" %}
 
+{% block head %}
+<!-- DataTables -->
+<link href="{{ url_for('static', filename='libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css') }}" rel="stylesheet" type="text/css" />
+<link href="{{ url_for('static', filename='libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css') }}" rel="stylesheet" type="text/css" />
+{% endblock head %}
+
 {% block content %}
 <div class="row">
     <div class="col-12">
@@ -13,40 +19,123 @@
     <div class="col-12">
         <div class="card">
             <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h4 class="card-title">Oportunidades</h4>
-                    <a href="{{ url_for('vistaOportunidad.create_oportunidad') }}" class="btn btn-primary">Nueva Oportunidad</a>
-                </div>
+                <h4 class="card-title mb-4">
+                    Oportunidades
+                    <a class="btn btn-success float-right" href="{{ url_for('vistaOportunidad.create_oportunidad') }}">Crear Nueva Oportunidad</a>
+                </h4>
 
+                <!-- Filtros -->
+                <form method="get" action="{{ url_for('vistaOportunidad.list_oportunidades') }}">
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <label for="tipo_innovacion" class="form-label">Tipo de Innovación</label>
+                            <select id="tipo_innovacion" name="tipo_innovacion" class="form-control">
+                                <option value="">-- Todos --</option>
+                                {% for value, label in form.tipo_innovacion.choices %}
+                                    {% if value != '' %}
+                                        <option value="{{ value }}" {% if selected_tipo == value|string %}selected{% endif %}>{{ label }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="foco_innovacion" class="form-label">Foco de Innovación</label>
+                            <select id="foco_innovacion" name="foco_innovacion" class="form-control">
+                                <option value="">-- Todos --</option>
+                                {% for value, label in form.foco_innovacion.choices %}
+                                    {% if value != '' %}
+                                        <option value="{{ value }}" {% if selected_foco == value|string %}selected{% endif %}>{{ label }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="estado" class="form-label">Estado</label>
+                            <select id="estado" name="estado" class="form-control">
+                                <option value="">-- Todos --</option>
+                                <option value="True" {% if selected_estado == 'True' %}selected{% endif %}>Aprobada</option>
+                                <option value="False" {% if selected_estado == 'False' %}selected{% endif %}>Pendiente</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">Aplicar Filtros</button>
+                            <a href="{{ url_for('vistaOportunidad.list_oportunidades') }}" class="btn btn-secondary">Limpiar</a>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Tabla de Oportunidades -->
                 <div class="table-responsive">
-                    <table id="datatable" class="table table-bordered dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+                    <table id="datatable" class="table table-bordered dt-responsive nowrap" style="width: 100%;">
                         <thead>
                             <tr>
+                                <th>Código</th>
                                 <th>Título</th>
                                 <th>Descripción</th>
+                                <th>Palabras clave</th>
+                                <th>Tipo de Innovación</th>
+                                <th>Foco de Innovación</th>
+                                <th>Fecha de Creación</th>
+                                <th>Archivo Multimedia</th>
+                                <th>Creado por</th>
                                 <th>Estado</th>
-                                <th>Acciones</th>
+                                <th class="text-center">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for oportunidad in oportunidades %}
-                            <tr>
-                                <td>{{ oportunidad.titulo }}</td>
-                                <td>{{ oportunidad.descripcion|truncate(100) }}</td>
-                                <td>{{ 'Aprobada' if oportunidad.estado else 'No Aprobada' }}</td>
-                                <td>
-                                    <div class="btn-group" role="group">
-                                        <a href="{{ url_for('vistaOportunidad.view_oportunidad', codigo_oportunidad=oportunidad.codigo_oportunidad) }}" class="btn btn-info btn-sm" title="Ver">
-                                            <i class="fas fa-eye"></i>
+                            {% if oportunidades %}
+                                {% for oportunidad in oportunidades %}
+                                <tr {% if oportunidad.estado %} class="table-success" {% else %} class="table-warning" {% endif %}>
+                                    <td>{{ oportunidad.codigo_oportunidad }}</td>
+                                    <td>
+                                        <a href="{{ url_for('vistaOportunidad.detail_oportunidad', codigo_oportunidad=oportunidad.codigo_oportunidad) }}">
+                                            {{ oportunidad.titulo }}
                                         </a>
-                                        <a href="{{ url_for('vistaOportunidad.update_oportunidad', codigo_oportunidad=oportunidad.codigo_oportunidad) }}" class="btn btn-warning btn-sm" title="Editar">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <button type="button" class="btn btn-danger btn-sm" title="Eliminar" data-delete-url="{{ url_for('vistaOportunidad.delete_oportunidad', codigo_oportunidad=oportunidad.codigo_oportunidad) }}"><i class="fas fa-trash"></i></button>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
+                                    </td>
+                                    <td>{{ oportunidad.descripcion }}</td>
+                                    <td>{{ oportunidad.palabras_claves }}</td>
+                                    <td>{{ oportunidad.tipo_innovacion_nombre }}</td>
+                                    <td>{{ oportunidad.foco_innovacion_nombre }}</td>
+                                    <td>{{ oportunidad.fecha_creacion }}</td>
+                                    <td>
+                                        {% if oportunidad.archivo_multimedia %}
+                                            {% if oportunidad.archivo_multimedia.startswith('/static') %}
+                                                <a href="{{ oportunidad.archivo_multimedia }}" target="_blank">Ver archivo</a>
+                                            {% else %}
+                                                <a href="{{ url_for('static', filename=oportunidad.archivo_multimedia) }}" target="_blank">Ver archivo</a>
+                                            {% endif %}
+                                        {% else %}
+                                            No disponible
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ oportunidad.creador_por or oportunidad.creador_por_nombre }}</td>
+                                    <td>
+                                        {% if oportunidad.estado %}
+                                            <span class="badge badge-success">Aprobada</span>
+                                        {% else %}
+                                            <span class="badge badge-warning">Pendiente</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="{{ url_for('vistaOportunidad.update_oportunidad', codigo_oportunidad=oportunidad.codigo_oportunidad) }}" class="btn btn-warning btn-sm" style="width: 100px;">Editar</a>
+                                        <a href="{{ url_for('vistaOportunidad.delete_oportunidad', codigo_oportunidad=oportunidad.codigo_oportunidad) }}" class="btn btn-danger btn-sm" style="width: 100px;">Eliminar</a>
+                                        <form action="{{ url_for('vistaOportunidad.confirmar_oportunidad', codigo_oportunidad=oportunidad.codigo_oportunidad) }}" method="post">
+                                            {{ form.hidden_tag() }}
+                                            <button type="submit" class="btn btn-success btn-sm" style="width: 100px;">
+                                                <i class="fas fa-check"></i> Aprobar
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                <script>
+                                    console.log("Código de oportunidad: {{ oportunidad.codigo_oportunidad }}");
+                                </script>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="11" class="text-center">No hay oportunidades disponibles.</td>
+                                </tr>
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>
@@ -57,38 +146,13 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='libs/datatables.net/js/jquery.dataTables.min.js') }}"></script>
+<script src="{{ url_for('static', filename='libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
+<script src="{{ url_for('static', filename='libs/datatables.net-responsive/js/dataTables.responsive.min.js') }}"></script>
+<script src="{{ url_for('static', filename='libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js') }}"></script>
 <script>
-$(document).ready(function() {
-    $('#datatable').DataTable({
-        language: {
-            url: '//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json',
-        },
+    $(document).ready(function() {
+        $('#datatable').DataTable();
     });
-
-    $('.btn-danger').on('click', function() {
-        const url = $(this).data('delete-url');
-        confirmarEliminacion(url);
-    });
-});
-
-function confirmarEliminacion(url) {
-    if (confirm('¿Está seguro que desea eliminar esta oportunidad?')) {
-        const headers = {
-            'X-CSRFToken': '{{ csrf_token() }}',
-            'Content-Type': 'application/json',
-        };
-        fetch(url, { method: 'POST', headers })
-            .then((response) => {
-                if (response.ok) {
-                    window.location.reload();
-                } else {
-                    alert('Error al eliminar la oportunidad');
-                }
-            })
-            .catch(() => {
-                alert('Error al eliminar la oportunidad');
-            });
-    }
-}
 </script>
-{% endblock %}
+{% endblock scripts %}

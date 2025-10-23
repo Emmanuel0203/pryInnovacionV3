@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Título de la página -->
+<div class="row">
+    <div class="col-sm-6">
+        <div class="page-title-box">
+            <h4>Oportunidades</h4>
+        </div>
+    </div>
+</div>
+
+<!-- Formulario de confirmación de eliminación -->
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">Eliminar Oportunidad</h4>
+
+                <!-- Formulario para confirmar eliminación -->
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+
+                    <!-- Mensaje de confirmación -->
+                    <p>¿Está seguro de que desea eliminar esta oportunidad?</p>
+                    <p>Oportunidad: <b>{{ oportunidad.titulo }}</b></p>
+
+                    <!-- Mostrar datos relevantes de la oportunidad -->
+                    <div class="mb-3">
+                        <strong>Descripción:</strong>
+                        <p>{{ oportunidad.descripcion }}</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <strong>Palabras clave:</strong>
+                        <p>{{ oportunidad.palabras_claves }}</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <strong>Tipo de Innovación:</strong>
+                        <p>{{ oportunidad.tipo_innovacion_nombre or oportunidad.id_tipo_innovacion }}</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <strong>Foco de Innovación:</strong>
+                        <p>{{ oportunidad.foco_innovacion_nombre or oportunidad.id_foco_innovacion }}</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <strong>Fecha de creación:</strong>
+                        <p>{{ oportunidad.fecha_creacion or 'N/A' }}</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <strong>Creador:</strong>
+                        <p>{{ oportunidad.creador_por or oportunidad.creador_por_nombre }}</p>
+                    </div>
+
+                    {% if is_experto %}
+                        <div class="form-group">
+                            <label for="mensaje_experto">Mensaje del experto (opcional)</label>
+                            <textarea class="form-control" id="mensaje_experto" name="mensaje_experto" rows="3" placeholder="Escriba un mensaje aquí (opcional)"></textarea>
+                        </div>
+                    {% endif %}
+
+                    <div class="form-group mb-0">
+                        <div>
+                            <button type="submit" class="btn btn-danger float-right">Eliminar</button>
+                            <a href="{{ url_for('vistaOportunidad.list_oportunidades') }}" class="btn btn-light">Regresar</a>
+                        </div>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
