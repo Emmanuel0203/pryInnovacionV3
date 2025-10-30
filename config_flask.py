@@ -33,6 +33,17 @@ API_CONFIG = {
 }
 
 # =========================
+# Metas para el dashboard (opción A)
+# Se pueden sobreescribir con variables de entorno:
+#   META_IDEAS, META_OPORTUNIDADES, META_SOLUCIONES
+# =========================
+DASHBOARD_METAS = {
+    'ideas': int(os.environ.get('META_IDEAS', 100)),
+    'oportunidades': int(os.environ.get('META_OPORTUNIDADES', 50)),
+    'soluciones': int(os.environ.get('META_SOLUCIONES', 75)),
+}
+
+# =========================
 # Archivos estáticos y media
 # =========================
 STATIC_URL = '/static/'
