@@ -245,6 +245,7 @@ def update_oportunidad(codigo_oportunidad):
         flash("Oportunidad no encontrada", "error")
         return redirect(url_for("vistaOportunidad.list_oportunidades"))
 
+    # Cargar opciones dinámicas desde la API (igual que en update_solucion)
     try:
         focos_tipos = {
             "focos": oportunidad_client.fetch_endpoint_data("foco_innovacion"),
@@ -252,139 +253,110 @@ def update_oportunidad(codigo_oportunidad):
         }
     except Exception as e:
         current_app.logger.exception("Error al cargar opciones dinámicas")
-        focos_tipos = {
-            "focos": [],
-            "tipos": []
+        focos_tipos = {"focos": [], "tipos": []}
+
+    # Crear el formulario y asignar choices primero
+    form = OportunidadForm()
+    # Convertir ids a int si el SelectField en el formulario usa coerce=int
+    form.foco_innovacion.choices = [
+        (int(f['id_foco_innovacion']), f.get('name', str(f['id_foco_innovacion'])))
+        for f in focos_tipos['focos']
+    ]
+    form.tipo_innovacion.choices = [
+        (int(t['id_tipo_innovacion']), t.get('name', str(t['id_tipo_innovacion'])))
+        for t in focos_tipos['tipos']
+    ]
+
+    # Preparar datos del backend para pre-popular el formulario (coerce ids a int)
+    backend = dict(oportunidad[0])
+    try:
+        if backend.get('id_tipo_innovacion') is not None:
+            backend['tipo_innovacion'] = int(backend.get('id_tipo_innovacion'))
+    except Exception:
+        backend['tipo_innovacion'] = None
+    try:
+        if backend.get('id_foco_innovacion') is not None:
+            backend['foco_innovacion'] = int(backend.get('id_foco_innovacion'))
+    except Exception:
+        backend['foco_innovacion'] = None
+
+    # SOLO pre-popular en GET para no sobreescribir datos POST (mejor práctica)
+    if request.method != 'POST':
+        form.process(data=backend)
+
+    if request.method == "POST" and form.validate_on_submit():
+        # Manejar archivo multimedia (mantener existente si no se sube nuevo)
+        archivo_url = oportunidad[0].get("archivo_multimedia", "")
+        archivo = request.files.get('archivo_multimedia')
+        if archivo and archivo.filename:
+            from werkzeug.utils import secure_filename
+            import os
+            from datetime import datetime
+
+            upload_folder = os.path.join(current_app.root_path, 'static', 'uploads')
+            os.makedirs(upload_folder, exist_ok=True)
+
+            # Eliminar archivo anterior si existe
+            old_file_path = oportunidad[0].get("archivo_multimedia")
+            if old_file_path:
+                old_full_path = os.path.join(current_app.root_path, 'static', old_file_path)
+                try:
+                    if os.path.exists(old_full_path):
+                        os.remove(old_full_path)
+                        current_app.logger.debug(f"Archivo anterior eliminado: {old_full_path}")
+                except Exception as e:
+                    current_app.logger.warning(f"No se pudo eliminar archivo anterior: {e}")
+
+            # Guardar nuevo archivo
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_")
+            filename = secure_filename(archivo.filename)
+            unique_filename = f"{timestamp}{filename}"
+            file_path = os.path.join(upload_folder, unique_filename)
+            try:
+                archivo.save(file_path)
+                archivo_url = f"uploads/{unique_filename}"
+                current_app.logger.debug(f"Nuevo archivo guardado en: {file_path}, URL: {archivo_url}")
+            except Exception as e:
+                current_app.logger.error(f"Error al guardar archivo: {e}")
+                flash("Error al guardar el archivo multimedia", "danger")
+                return render_template("edit_oportunidades.html", form=form, oportunidad=oportunidad[0])
+
+        # Construir payload similar a update_solucion
+        payload = {
+            "id_tipo_innovacion": form.tipo_innovacion.data,
+            "id_foco_innovacion": form.foco_innovacion.data,
+            "titulo": form.titulo.data,
+            "descripcion": form.descripcion.data,
+            "palabras_claves": form.palabras_claves.data,
+            "recursos_requeridos": form.recursos_requeridos.data,
+            "archivo_multimedia": archivo_url,
+            "creador_por": oportunidad[0].get("creador_por"),
+            # Usar estado desde el form si existe, si no mantener el actual
+            "estado": form.estado.data if hasattr(form, 'estado') else oportunidad[0].get("estado")
         }
 
-    # Crear el formulario, asignar choices primero y luego aplicar los datos
-    form = OportunidadForm()
-    # Ensure the underlying values are ints so WTForms coerce=int can match them
-    form.foco_innovacion.choices = [(int(f['id_foco_innovacion']), f['name']) for f in focos_tipos['focos']]
-    form.tipo_innovacion.choices = [(int(t['id_tipo_innovacion']), t['name']) for t in focos_tipos['tipos']]
-    # Debug: log what we received and what choices were created
-    current_app.logger.debug(f"focos_tipos (raw): {focos_tipos}")
-    current_app.logger.debug(f"tipo_innovacion.choices: {form.tipo_innovacion.choices}")
-    current_app.logger.debug(f"foco_innovacion.choices: {form.foco_innovacion.choices}")
-    # Procesar los datos de la oportunidad una vez que las choices están establecidas
-    # Coerce numeric id fields to int so they match SelectField(coerce=int)
-    data_to_process = dict(oportunidad[0])
-    try:
-        if 'id_tipo_innovacion' in data_to_process and data_to_process['id_tipo_innovacion'] is not None:
-            data_to_process['id_tipo_innovacion'] = int(data_to_process['id_tipo_innovacion'])
-    except Exception:
-        pass
-    try:
-        if 'id_foco_innovacion' in data_to_process and data_to_process['id_foco_innovacion'] is not None:
-            data_to_process['id_foco_innovacion'] = int(data_to_process['id_foco_innovacion'])
-    except Exception:
-        pass
-
-    current_app.logger.debug(f"data_to_process before process: {data_to_process}")
-    # Map backend keys to form field names and coerce ids to int
-    mapped = dict(data_to_process)
-    if 'id_tipo_innovacion' in mapped:
-        try:
-            mapped['tipo_innovacion'] = int(mapped.get('id_tipo_innovacion'))
-        except Exception:
-            mapped['tipo_innovacion'] = None
-    if 'id_foco_innovacion' in mapped:
-        try:
-            mapped['foco_innovacion'] = int(mapped.get('id_foco_innovacion'))
-        except Exception:
-            mapped['foco_innovacion'] = None
-
-    # Only pre-populate the form from the backend on GET; on POST we must let WTForms process request.form
-    if request.method != 'POST':
-        form.process(data=mapped)
-        current_app.logger.debug(f"form.data after process: {form.data}")
-    else:
-        # On POST, do not override with backend data — let WTForms parse request.form
-        current_app.logger.debug("POST request: skipping form.process to allow WTForms to parse request.form")
-
-    if request.method == "POST":
-        if form.validate_on_submit():
-            # Manejar archivo multimedia en actualización
-            archivo_url = oportunidad[0].get("archivo_multimedia", "")  # Mantener el archivo existente por defecto
-            archivo = request.files.get('archivo_multimedia')
-            
-            if archivo and archivo.filename:
-                import os
-                from werkzeug.utils import secure_filename
-                
-                # Crear directorio uploads si no existe
-                upload_folder = os.path.join(current_app.root_path, 'static', 'uploads')
-                if not os.path.exists(upload_folder):
-                    os.makedirs(upload_folder)
-                
-                # Eliminar archivo anterior si existe
-                old_file_path = oportunidad[0].get("archivo_multimedia")
-                if old_file_path:
-                    old_full_path = os.path.join(current_app.root_path, 'static', old_file_path)
-                    if os.path.exists(old_full_path):
-                        try:
-                            os.remove(old_full_path)
-                            print(f"[DEBUG] Archivo anterior eliminado: {old_full_path}")
-                        except Exception as e:
-                            print(f"[WARNING] No se pudo eliminar archivo anterior: {e}")
-                
-                # Guardar nuevo archivo
-                filename = secure_filename(archivo.filename)
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_")
-                unique_filename = f"{timestamp}{filename}"
-                file_path = os.path.join(upload_folder, unique_filename)
-                
-                try:
-                    archivo.save(file_path)
-                    archivo_url = f"uploads/{unique_filename}"
-                    print(f"[DEBUG] Nuevo archivo guardado en: {file_path}, URL: {archivo_url}")
-                except Exception as e:
-                    print(f"[ERROR] Error al guardar archivo: {e}")
-                    flash("Error al guardar el archivo multimedia", "danger")
-                    return render_template("edit_oportunidades.html", form=form, oportunidad=oportunidad[0])
-
-            payload = {
-                "id_tipo_innovacion": form.tipo_innovacion.data,
-                "id_foco_innovacion": form.foco_innovacion.data,
-                "titulo": form.titulo.data,
-                "descripcion": form.descripcion.data,
-                "palabras_claves": form.palabras_claves.data,
-                "recursos_requeridos": form.recursos_requeridos.data,
-                "archivo_multimedia": archivo_url,
-                "creador_por": oportunidad[0].get("creador_por"),  # Mantener el creador original
-                # use the possibly edited estado from the form
-                "estado": form.estado.data if hasattr(form, 'estado') else oportunidad[0].get("estado")
-            }
-
-            response = oportunidad_client.update_by_key("codigo_oportunidad", codigo_oportunidad, payload)
-            if response and response.get("estado") == 200:
-                flash("Oportunidad actualizada correctamente", "success")
-                return redirect(url_for("vistaOportunidad.list_oportunidades"))
-            else:
-                current_app.logger.error(f"Error al actualizar la oportunidad, respuesta API: {response}")
-                flash("Error al actualizar la oportunidad", "danger")
+        response = oportunidad_client.update_by_key("codigo_oportunidad", codigo_oportunidad, payload)
+        if response and response.get("estado") == 200:
+            flash("Oportunidad actualizada correctamente", "success")
+            return redirect(url_for("vistaOportunidad.list_oportunidades"))
         else:
-            # Validation failed — log details so we can see which validators blocked the update
-            current_app.logger.debug(f"Validación de formulario fallida al actualizar oportunidad {codigo_oportunidad}")
+            current_app.logger.error(f"Error al actualizar la oportunidad, respuesta API: {response}")
+            flash("Error al actualizar la oportunidad", "danger")
+
+    else:
+        # Si hubo POST pero validación fallida, mostrar errores (como en tu versión anterior)
+        if request.method == "POST" and not form.validate_on_submit():
+            current_app.logger.debug(f"Validación fallida para oportunidad {codigo_oportunidad}")
             current_app.logger.debug(f"request.form: {request.form}")
             current_app.logger.debug(f"form.errors: {form.errors}")
-            # Also log what WTForms parsed for the select fields and their types
+
             try:
                 current_app.logger.debug(f"form.tipo_innovacion.data: {form.tipo_innovacion.data} (type: {type(form.tipo_innovacion.data)})")
             except Exception:
                 current_app.logger.debug("form.tipo_innovacion.data: <unavailable>")
-            try:
-                current_app.logger.debug(f"form.foco_innovacion.data: {form.foco_innovacion.data} (type: {type(form.foco_innovacion.data)})")
-            except Exception:
-                current_app.logger.debug("form.foco_innovacion.data: <unavailable>")
-            try:
-                current_app.logger.debug(f"form.descripcion.data: {form.descripcion.data} (len={len(form.descripcion.data) if form.descripcion.data else 0})")
-            except Exception:
-                current_app.logger.debug("form.descripcion.data: <unavailable>")
-            # Inform the user that validation failed — template already shows per-field errors
-            flash("Error al validar el formulario. Revise los campos marcados.", "danger")
 
     return render_template("edit_oportunidades.html", form=form, oportunidad=oportunidad[0])
+
 
 @oportunidades_bp.route("/delete/<int:codigo_oportunidad>", methods=["GET", "POST"])
 @login_required
