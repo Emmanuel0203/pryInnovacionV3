@@ -3,6 +3,7 @@ from flask import (
     Blueprint, render_template, request, redirect, url_for, flash, session, current_app
 )
 from flask_login import current_user
+from collections import Counter
 from utils.api_client import APIClient
 from utils.external_api import FocoInnovacionAPI, TipoInnovacionAPI
 from forms.formsSoluciones import SolucionForm
@@ -72,7 +73,24 @@ def get_solucion(codigo_solucion):
     if not solution:
         flash("Solución no encontrada", "error")
         return redirect(url_for("vistaSolucion.list_solucion"))
-    return render_template("detail_soluciones.html", solution=solution[0])
+    
+    # ✅ AGREGAR ESTO: Obtener nombres de tipo y foco
+    try:
+        focos_tipos = {
+            "focos": solucion_client.fetch_endpoint_data("foco_innovacion"),
+            "tipos": solucion_client.fetch_endpoint_data("tipo_innovacion")
+        }
+        
+        foco_map = {f['id_foco_innovacion']: f['name'] for f in focos_tipos['focos']}
+        tipo_map = {t['id_tipo_innovacion']: t['name'] for t in focos_tipos['tipos']}
+        
+        # Agregar los nombres al objeto solución
+        solution[0]['tipo_innovacion_nombre'] = tipo_map.get(solution[0]['id_tipo_innovacion'], 'Desconocido')
+        solution[0]['foco_innovacion_nombre'] = foco_map.get(solution[0]['id_foco_innovacion'], 'Desconocido')
+    except Exception as e:
+        current_app.logger.error(f"Error al obtener nombres de tipo/foco: {e}")
+    
+    return render_template("detail_soluciones.html", solucion=solution[0])
 
 
 
@@ -271,3 +289,72 @@ def confirmar_solucion(codigo_solucion):
 @login_required
 def vistacalendario():
     return render_template("calendar.html")
+
+from collections import Counter
+
+@soluciones_bp.route('/top-generadores')
+@login_required
+def top_generadores():
+    """Top 10 generadores de soluciones"""
+    try:
+        soluciones = solucion_client.get_all() or []
+        creador_key = lambda solucion: (
+            solucion.get("creador_por") or 
+            solucion.get("usuario") or 
+            solucion.get("autor") or 
+            "Anónimo"
+        )
+        top_generadores = Counter(
+            creador_key(s) for s in soluciones
+        ).most_common(10)
+    except Exception as e:
+        current_app.logger.exception("Error al obtener top generadores de soluciones")
+        flash(f"Error al cargar el top de generadores: {e}", "danger")
+        top_generadores = []
+    
+    # ✅ CAMBIA ESTA LÍNEA:
+    return render_template(
+        "top_generadoresSolu.html",  # ← Nombre correcto del archivo
+        top_generadores=top_generadores
+    )
+
+
+@soluciones_bp.route("/mercado", methods=["GET"])
+@login_required
+def mercado():
+    """Mercado de soluciones - solo muestra soluciones aprobadas"""
+    try:
+        soluciones_mercado = solucion_client.get_all() or []
+        soluciones_mercado = [s for s in soluciones_mercado if s.get('estado') == True]
+        
+        focos_tipos = {
+            "focos": solucion_client.fetch_endpoint_data("foco_innovacion"),
+            "tipos": solucion_client.fetch_endpoint_data("tipo_innovacion")
+        }
+        
+        foco_map = {f['id_foco_innovacion']: f['name'] for f in focos_tipos['focos']}
+        tipo_map = {t['id_tipo_innovacion']: t['name'] for t in focos_tipos['tipos']}
+        
+        for solucion in soluciones_mercado:
+            solucion['foco_innovacion_nombre'] = foco_map.get(solucion['id_foco_innovacion'], 'Desconocido')
+            solucion['tipo_innovacion_nombre'] = tipo_map.get(solucion['id_tipo_innovacion'], 'Desconocido')
+            
+            fecha = solucion.get("fecha_creacion")
+            if isinstance(fecha, str):
+                try:
+                    solucion["fecha_creacion"] = datetime.strptime(fecha[:10], "%Y-%m-%d")
+                except Exception:
+                    solucion["fecha_creacion"] = None
+            elif fecha is None:
+                solucion["fecha_creacion"] = None
+                
+    except Exception as e:
+        current_app.logger.exception("Error al obtener soluciones para el mercado")
+        flash(f"Error al obtener soluciones del mercado: {e}", "danger")
+        soluciones_mercado = []
+    
+    # ✅ CAMBIA ESTA LÍNEA:
+    return render_template(
+        "mercado_soluciones.html",  # ← Nombre correcto del archivo
+        soluciones_mercado=soluciones_mercado
+    )

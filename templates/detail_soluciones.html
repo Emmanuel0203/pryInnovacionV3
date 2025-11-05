@@ -9,7 +9,10 @@
 <div class="row">
     <div class="col-12">
         <div class="page-title-box">
-            <h4>Detalle de la Solución</h4>
+            <h4 class="page-title">
+                <i class="fas fa-puzzle-piece me-2"></i>
+                Detalle de la Solución
+            </h4>
         </div>
     </div>
 </div>
@@ -19,15 +22,17 @@
         <div class="card">
             <div class="card-body">
                 <div class="table-responsive">
-                    <table id="table" class="table table-bordered">
+                    <table class="table table-bordered table-hover">
                         <tbody>
                             <tr>
-                                <th>Código de la solución</th>
-                                <td>{{ solucion.codigo_solucion }}</td>
+                                <th style="width: 30%;">Código de la solución</th>
+                                <td>
+                                    <span class="badge bg-primary fs-6">{{ solucion.codigo_solucion }}</span>
+                                </td>
                             </tr>
                             <tr>
                                 <th>Título</th>
-                                <td>{{ solucion.titulo }}</td>
+                                <td><strong>{{ solucion.titulo }}</strong></td>
                             </tr>
                             <tr>
                                 <th>Descripción</th>
@@ -35,52 +40,96 @@
                             </tr>
                             <tr>
                                 <th>Fecha de creación</th>
-                                <td>{{ solucion.fecha_creacion }}</td>
-                            </tr>
-                            <tr>
-                                <th>Palabras clave</th>
-                                <td>{{ solucion.palabras_claves }}</td>
-                            </tr>
-                            <tr>
-                                <th>Recursos requeridos</th>
-                                <td>{{ solucion.recursos_requeridos }}</td>
-                            </tr>
-                            <tr>
-                                <th>Archivo multimedia</th>
                                 <td>
-                                    {% if solucion.archivo_multimedia_url %}
-                                        <a href="{{ solucion.archivo_multimedia_url }}" target="_blank">Ver archivo</a>
+                                    <i class="fas fa-calendar me-2 text-primary"></i>
+                                    {% if solucion.fecha_creacion %}
+                                        {% set fecha = solucion.fecha_creacion[:10].split('-') %}
+                                        {{ fecha[2] }}/{{ fecha[1] }}/{{ fecha[0] }}
                                     {% else %}
                                         No disponible
                                     {% endif %}
                                 </td>
                             </tr>
                             <tr>
+                                <th>Palabras clave</th>
+                                <td>
+                                    {% if solucion.palabras_claves %}
+                                        <span class="badge bg-info me-1">{{ solucion.palabras_claves }}</span>
+                                    {% else %}
+                                        No especificadas
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Recursos requeridos</th>
+                                <td>
+                                    <i class="fas fa-dollar-sign me-2 text-success"></i>
+                                    {{ solucion.recursos_requeridos }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Archivo multimedia</th>
+                                <td>
+                                    {% if solucion.archivo_multimedia %}
+                                        <i class="fas fa-file-alt me-2 text-warning"></i>
+                                        {{ solucion.archivo_multimedia }}
+                                    {% else %}
+                                        <span class="text-muted">No disponible</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
                                 <th>Tipo de Innovación</th>
-                                <td>{{ solucion.id_tipo_innovacion }}</td>
+                                <td>
+                                    {% if solucion.tipo_innovacion_nombre %}
+                                        <span class="badge bg-info">{{ solucion.tipo_innovacion_nombre }}</span>
+                                    {% else %}
+                                        <span class="text-muted">No especificado</span>
+                                    {% endif %}
+                                </td>
                             </tr>
                             <tr>
                                 <th>Foco de Innovación</th>
-                                <td>{{ solucion.id_foco_innovacion }}</td>
+                                <td>
+                                    {% if solucion.foco_innovacion_nombre %}
+                                        <span class="badge bg-warning text-dark">{{ solucion.foco_innovacion_nombre }}</span>
+                                    {% else %}
+                                        <span class="text-muted">No especificado</span>
+                                    {% endif %}
+                                </td>
                             </tr>
                             <tr>
                                 <th>Creado por</th>
-                                <td>{{ solucion.creador_por }}</td>
+                                <td>
+                                    <i class="fas fa-user-circle me-2 text-primary"></i>
+                                    {{ solucion.creador_por }}
+                                </td>
                             </tr>
                             <tr>
-                                <th>Desarrollado por</th>
-                                <td>{{ solucion.desarrollador_por }}</td>
-                            </tr>
-                            <tr>
-                                <th>Área o unidad de desarrollo</th>
-                                <td>{{ solucion.area_unidad_desarrollo }}</td>
+                                <th>Estado</th>
+                                <td>
+                                    {% if solucion.estado %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check-circle me-1"></i>Aprobada
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="fas fa-clock me-1"></i>Pendiente
+                                        </span>
+                                    {% endif %}
+                                </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
 
                 <div class="text-center mt-4">
-                    <a href="{{ url_for('vistaSolucion.list_solucion') }}" class="btn btn-primary">Regresar a Soluciones</a>
+                    <a href="{{ url_for('vistaSolucion.list_solucion') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> Regresar a Soluciones
+                    </a>
+                    <a href="{{ url_for('vistaSolucion.update_solucion', codigo_solucion=solucion.codigo_solucion) }}" class="btn btn-primary">
+                        <i class="fas fa-edit me-1"></i> Editar Solución
+                    </a>
                 </div>
             </div>
         </div>
@@ -93,9 +142,4 @@
 <script src="{{ url_for('static', filename='libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
 <script src="{{ url_for('static', filename='libs/datatables.net-responsive/js/dataTables.responsive.min.js') }}"></script>
 <script src="{{ url_for('static', filename='libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js') }}"></script>
-<script>
-    $(document).ready(function() {
-        $('#table').DataTable();
-    });
-</script>
 {% endblock scripts %}

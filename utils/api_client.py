@@ -25,7 +25,6 @@ class APIClient:
     def _make_request(self, method="GET", endpoint="", payload=None, files=None, **params):
         url = f"{self.base_url}/{endpoint}" if endpoint else f"{self.base_url}/{self.table_name}"
         headers = {"Content-Type": "application/json"} if not files else None
-        # print(f"[DEBUG] Enviando solicitud {method} a {url} con headers: {headers}")
 
         # 🔍 DEBUG: Ver la petición completa
         print(f"[DEBUG] Petición {method} a: {url}")
@@ -36,27 +35,58 @@ class APIClient:
 
         try:
             if method.upper() == "GET":
-                response = requests.get(url, params=params, headers=headers, timeout=10)
+                response = requests.get(url, params=params, headers=headers, timeout=10, verify=False)
             elif method.upper() == "POST":
                 if files:
-                    response = requests.post(url, data=payload, files=files, timeout=15)
+                    response = requests.post(url, data=payload, files=files, timeout=15, verify=False)
                 else:
-                    response = requests.post(url, json=payload, headers=headers, timeout=10)
+                    response = requests.post(url, json=payload, headers=headers, timeout=10, verify=False)
             elif method.upper() == "PUT":
-                response = requests.put(url, json=payload, headers=headers, timeout=10)
+                response = requests.put(url, json=payload, headers=headers, timeout=10, verify=False)
             elif method.upper() == "DELETE":
-                response = requests.delete(url, headers=headers, timeout=10)
+                response = requests.delete(url, headers=headers, timeout=10, verify=False)
             else:
                 raise ValueError(f"Método HTTP no soportado: {method}")
 
             print(f"[DEBUG] Status Code: {response.status_code}")
-            response.raise_for_status()
+            
+            # ✅ CAMBIO CLAVE: Capturar respuesta antes de raise_for_status
+            try:
+                response_data = response.json()
+            except:
+                response_data = {"mensaje": response.text}
+            
+            # Si hay error HTTP, retornar info del error
+            if response.status_code >= 400:
+                print(f"[ERROR] Error HTTP {response.status_code}: {response_data}")
+                return {
+                    "estado": response.status_code,
+                    "status_code": response.status_code,
+                    "mensaje": response_data.get("mensaje") or response_data.get("message") or response.text,
+                    "error": True
+                }
+            
             print(f"[DEBUG] Respuesta recibida: {response.status_code}")
-            return response.json()
+            return response_data if isinstance(response_data, dict) else {"datos": response_data, "estado": response.status_code}
 
         except requests.exceptions.RequestException as e:
             print(f"[ERROR] Error en {method} {url}: {e}")
-            return None
+            return {
+                "estado": 500,
+                "mensaje": str(e),
+                "error": True
+            }
+            
+            print(f"[DEBUG] Respuesta recibida: {response.status_code}")
+            return response_data if isinstance(response_data, dict) else {"datos": response_data, "estado": response.status_code}
+
+        except requests.exceptions.RequestException as e:
+            print(f"[ERROR] Error en {method} {url}: {e}")
+            return {
+                "estado": 500,
+                "mensaje": str(e),
+                "error": True
+            }
 
     def _wrap_payload(self, data_list):
         """

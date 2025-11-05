@@ -1,71 +1,68 @@
 {% extends "base.html" %}
 
-{% block head %}
-<!-- DataTables -->
-<link href="{{ url_for('static', filename='libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css') }}" rel="stylesheet" type="text/css" />
-<link href="{{ url_for('static', filename='libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css') }}" rel="stylesheet" type="text/css" />
-{% endblock head %}
-
 {% block title %}Lista de Ideas{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
-    <!-- start page title -->
     <div class="row">
         <div class="col-12">
-            <div class="page-title-box d-flex align-items-center justify-content-between">
-                <h4 class="mb-0 font-size-18">Lista de Ideas</h4>
-                <div class="page-title-right">
-                    <a href="{{ url_for('ideas.create_idea') }}" class="btn btn-primary waves-effect waves-light">
-                        <i class="ri-add-line align-middle me-1"></i> Crear Nueva Idea
-                    </a>
-                </div>
+            <div class="page-title-box">
+                <h4 class="page-title">Gestión de Ideas de Innovación</h4>
             </div>
         </div>
     </div>
-    <!-- end page title -->
 
     <!-- Filtros -->
     <div class="row mb-3">
         <div class="col-12">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title">Filtrar Ideas</h5>
-                    <form method="get" action="{{ url_for('ideas.list_ideas') }}">
-                        <div class="row">
-                            <div class="col-md-3 mb-3">
-                                <label for="tipo_innovacion" class="form-label">Tipo de Innovación</label>
-                                <select name="tipo_innovacion" id="tipo_innovacion" class="form-select">
+                    <h5 class="card-title mb-3">Filtros</h5>
+                    <form method="GET" action="{{ url_for('ideas.list_ideas') }}">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Tipo de Innovación</label>
+                                <select name="tipo_innovacion" class="form-select">
                                     <option value="">Todos</option>
                                     {% for tipo in tipos %}
-                                        <option value="{{ tipo.id_tipo_innovacion }}" {% if selected_tipo == tipo.id_tipo_innovacion|string %}selected{% endif %}>
-                                            {{ tipo.name or tipo.nombre or tipo.tipo or 'Sin nombre' }}
-                                        </option>
+                                    <option value="{{ tipo.id_tipo_innovacion }}" 
+                                            {% if request.args.get('tipo_innovacion') == tipo.id_tipo_innovacion|string %}selected{% endif %}>
+                                        {{ tipo.name }}
+                                    </option>
                                     {% endfor %}
                                 </select>
                             </div>
-                            <div class="col-md-3 mb-3">
-                                <label for="foco_innovacion" class="form-label">Foco de Innovación</label>
-                                <select name="foco_innovacion" id="foco_innovacion" class="form-select">
+                            <div class="col-md-3">
+                                <label class="form-label">Foco de Innovación</label>
+                                <select name="foco_innovacion" class="form-select">
                                     <option value="">Todos</option>
                                     {% for foco in focos %}
-                                        <option value="{{ foco.id_foco_innovacion }}" {% if selected_foco == foco.id_foco_innovacion|string %}selected{% endif %}>
-                                            {{ foco.name or foco.nombre or foco.foco or 'Sin nombre' }}
-                                        </option>
+                                    <option value="{{ foco.id_foco_innovacion }}"
+                                            {% if request.args.get('foco_innovacion') == foco.id_foco_innovacion|string %}selected{% endif %}>
+                                        {{ foco.name }}
+                                    </option>
                                     {% endfor %}
                                 </select>
                             </div>
-                            <div class="col-md-3 mb-3">
-                                <label for="estado" class="form-label">Estado</label>
-                                <select name="estado" id="estado" class="form-select">
+                            <div class="col-md-2">
+                                <label class="form-label">Estado</label>
+                                <select name="estado" class="form-select">
                                     <option value="">Todos</option>
-                                    <option value="0" {% if selected_estado == '0' %}selected{% endif %}>Pendiente</option>
-                                    <option value="1" {% if selected_estado == '1' %}selected{% endif %}>Aprobado</option>
+                                    <option value="1" {% if request.args.get('estado') == '1' %}selected{% endif %}>Aprobadas</option>
+                                    <option value="0" {% if request.args.get('estado') == '0' %}selected{% endif %}>Pendientes</option>
                                 </select>
                             </div>
-                            <div class="col-md-3 d-flex align-items-end mb-3">
-                                <button type="submit" class="btn btn-primary me-2">Filtrar</button>
-                                <a href="{{ url_for('ideas.list_ideas') }}" class="btn btn-secondary">Limpiar</a>
+                            <div class="col-md-2">
+                                <label class="form-label">&nbsp;</label>
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-filter me-1"></i> Filtrar
+                                </button>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">&nbsp;</label>
+                                <a href="{{ url_for('ideas.list_ideas') }}" class="btn btn-secondary w-100">
+                                    <i class="fas fa-redo me-1"></i> Limpiar
+                                </a>
                             </div>
                         </div>
                     </form>
@@ -74,93 +71,117 @@
         </div>
     </div>
 
-    <!-- Lista de Ideas -->
+    <!-- Botón Crear Nueva Idea -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <a href="{{ url_for('ideas.create_idea') }}" class="btn btn-success">
+                <i class="fas fa-plus-circle me-1"></i> Nueva Idea
+            </a>
+        </div>
+    </div>
+
+    <!-- Tabla de Ideas -->
     <div class="row">
         <div class="col-12">
             <div class="card">
                 <div class="card-body">
-                    {% if ideas %}
-                        <div class="table-responsive">
-                            <table class="table table-hover table-centered mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Título</th>
-                                        <th>Descripción Corta</th>
-                                        <th>Autor</th>
-                                        <th>Tipo</th>
-                                        <th>Foco</th>
-                                        <th>Fecha Creación</th>
-                                        <th>Estado</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
+                    <h5 class="card-title mb-3">
+                        Lista de Ideas 
+                        <span class="badge bg-primary">{{ ideas|length }} ideas</span>
+                    </h5>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Título</th>
+                                    <th>Autor</th>
+                                    <th>Tipo</th>
+                                    <th>Foco</th>
+                                    <th>Estado</th>
+                                    <th class="text-center" style="width: 150px;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if ideas %}
                                     {% for idea in ideas %}
                                     <tr>
-                                        <td><a href="{{ url_for('ideas.get_idea', codigo_idea=idea.codigo_idea) }}">{{ idea.titulo }}</a></td>
-                                        <td>{{ idea.descripcion[:80] }}{% if idea.descripcion|length > 80 %}...{% endif %}</td>
-                                        <td>{{ idea.autor_nombre or 'N/A' }}</td>
-                                        <td>{{ idea.tipo_innovacion_nombre or 'N/A' }}</td>
-                                        <td>{{ idea.foco_innovacion_nombre or 'N/A' }}</td>
-                                        <td>{{ idea.fecha_creacion or 'N/A' }}</td>
+                                        <!-- FECHA -->
                                         <td>
-                                            {% if idea.estado %}
-                                                <span class="badge bg-success">Aprobado</span>
+                                            {% if idea.fecha_creacion %}
+                                                {% set fecha = idea.fecha_creacion[:10].split('-') %}
+                                                {{ fecha[2] }}/{{ fecha[1] }}/{{ fecha[0] }}
                                             {% else %}
-                                                <span class="badge bg-warning">Pendiente</span>
+                                                N/A
                                             {% endif %}
                                         </td>
+
+                                        <!-- TÍTULO -->
+                                        <td>{{ idea.titulo or 'Sin título' }}</td>
+
+                                        <!-- AUTOR -->
+                                        <td>{{ idea.creador_por or 'Sin autor' }}</td>
+
+                                        <!-- TIPO DE INNOVACIÓN -->
+                                        <td>{{ tipo_dict.get(idea.id_tipo_innovacion, '—') }}</td>
+
+                                        <!-- FOCO DE INNOVACIÓN -->
+                                        <td>{{ foco_dict.get(idea.id_foco_innovacion, '—') }}</td>
+
+                                        <!-- ESTADO -->
                                         <td>
-                                            <a href="{{ url_for('ideas.get_idea', codigo_idea=idea.codigo_idea) }}" class="btn btn-sm btn-outline-primary waves-effect waves-light" title="Ver">
-                                                <i class="ri-eye-line"></i>
+                                            {% if idea.estado %}
+                                                <span class="badge bg-success">Aprobada</span>
+                                            {% else %}
+                                                <span class="badge bg-warning text-dark">Pendiente</span>
+                                            {% endif %}
+                                        </td>
+
+                                        <!-- ACCIONES -->
+                                        <td class="text-center">
+                                            <!-- Ver -->
+                                            <a href="{{ url_for('ideas.get_idea', codigo_idea=idea.codigo_idea) }}" 
+                                               class="btn btn-outline-info btn-sm" 
+                                               title="Ver">
+                                                <i class="fas fa-eye"></i>
                                             </a>
-                                            {# Solo mostrar botones de editar/eliminar si es el propietario #}
-                                            {% if idea.usuario_email == user_email %}
-                                                <a href="{{ url_for('ideas.update_idea', codigo_idea=idea.codigo_idea) }}" class="btn btn-sm btn-outline-secondary waves-effect waves-light" title="Editar">
-                                                    <i class="ri-pencil-line"></i>
-                                                </a>
-                                                <form action="{{ url_for('ideas.delete_idea', codigo_idea=idea.codigo_idea) }}" method="post" style="display: inline;" onsubmit="return confirm('¿Estás seguro de que deseas eliminar esta idea?');">
-                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                    <button type="submit" class="btn btn-sm btn-outline-danger waves-effect waves-light" title="Eliminar">
-                                                        <i class="ri-delete-bin-line"></i>
-                                                    </button>
-                                                </form>
-                                            {% endif %}
-                                            {# Solo mostrar botón de confirmar si es experto y la idea está pendiente #}
-                                            {% if is_experto and not idea.estado %}
-                                                <form action="{{ url_for('ideas.confirmar_idea', codigo_idea=idea.codigo_idea) }}" method="post" style="display: inline;" onsubmit="return confirm('¿Estás seguro de que deseas confirmar esta idea y crear un proyecto?');">
-                                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                    <button type="submit" class="btn btn-sm btn-success waves-effect waves-light" title="Confirmar Idea">
-                                                        <i class="ri-check-line"></i>
-                                                    </button>
-                                                </form>
-                                            {% endif %}
+
+                                            <!-- Editar -->
+                                            <a href="{{ url_for('ideas.update_idea', codigo_idea=idea.codigo_idea) }}" 
+                                               class="btn btn-outline-primary btn-sm" 
+                                               title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+
+                                            <!-- Eliminar - ✅ CON TOKEN CSRF -->
+                                            <form method="POST" 
+                                                  action="{{ url_for('ideas.delete_idea', codigo_idea=idea.codigo_idea) }}" 
+                                                  style="display:inline;" 
+                                                  onsubmit="return confirm('¿Seguro que quieres eliminar esta idea?');">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" 
+                                                        class="btn btn-outline-danger btn-sm" 
+                                                        title="Eliminar">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </form>
                                         </td>
                                     </tr>
                                     {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
-                        <div class="alert alert-info" role="alert">
-                            No se encontraron ideas que coincidan con los filtros seleccionados o no hay ideas registradas.
-                        </div>
-                    {% endif %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted py-4">
+                                            <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                                            No hay ideas registradas.
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 {% endblock %}
-
-{% block scripts %}
-<script src="{{ url_for('static', filename='libs/datatables.net/js/jquery.dataTables.min.js') }}"></script>
-<script src="{{ url_for('static', filename='libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
-<script src="{{ url_for('static', filename='libs/datatables.net-responsive/js/dataTables.responsive.min.js') }}"></script>
-<script src="{{ url_for('static', filename='libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js') }}"></script>
-<script>
-    $(document).ready(function() {
-        $('#datatable').DataTable();
-    });
-</script>
-{% endblock scripts %}

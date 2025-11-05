@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Mercado de Soluciones{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box">
+                <h4 class="page-title">🛒 Mercado de Soluciones</h4>
+                <p class="text-muted">Explora las soluciones aprobadas de innovación</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botón volver -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <a href="{{ url_for('vistaSolucion.list_solucion') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Volver a Soluciones
+            </a>
+        </div>
+    </div>
+
+    <!-- Cards de Soluciones -->
+    <div class="row">
+        {% if soluciones_mercado %}
+            {% for solucion in soluciones_mercado %}
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-sm hover-shadow">
+                    <!-- Imagen o placeholder -->
+                    {% if solucion.archivo_multimedia %}
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                        <i class="fas fa-file-alt fa-4x text-muted"></i>
+                        <p class="position-absolute bottom-0 mb-2 text-muted small">{{ solucion.archivo_multimedia }}</p>
+                    </div>
+                    {% else %}
+                    <div class="card-img-top" style="height: 200px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
+                    {% endif %}
+                    
+                    <!-- Contenido -->
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title text-primary">{{ solucion.titulo }}</h5>
+                        <p class="card-text text-muted flex-grow-1">
+                            {{ solucion.descripcion[:150] }}{% if solucion.descripcion|length > 150 %}...{% endif %}
+                        </p>
+                        
+                        <!-- Información del creador -->
+                        <div class="mb-3">
+                            <small class="text-muted">
+                                <i class="fas fa-user me-1"></i>
+                                <strong>Creado por:</strong> {{ solucion.creador_por }}<br>
+                                <i class="fas fa-calendar me-1"></i>
+                                <strong>Fecha:</strong>
+                                {% if solucion.fecha_creacion %}
+                                    {{ solucion.fecha_creacion.strftime("%d/%m/%Y") }}
+                                {% else %}
+                                    No disponible
+                                {% endif %}
+                            </small>
+                        </div>
+                        
+                        <hr class="my-2">
+                        
+                        <!-- Badges -->
+                        <div class="mb-2">
+                            <span class="badge bg-success me-1">
+                                <i class="fas fa-check-circle me-1"></i>Aprobada
+                            </span>
+                            {% if solucion.tipo_innovacion_nombre %}
+                            <span class="badge bg-info me-1">{{ solucion.tipo_innovacion_nombre }}</span>
+                            {% endif %}
+                            {% if solucion.foco_innovacion_nombre %}
+                            <span class="badge bg-warning text-dark">{{ solucion.foco_innovacion_nombre }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Footer con botón -->
+                    <div class="card-footer bg-transparent border-top-0">
+                        <a href="{{ url_for('vistaSolucion.get_solucion', codigo_solucion=solucion.codigo_solucion) }}" 
+                           class="btn btn-primary w-100">
+                            <i class="fas fa-eye me-1"></i> Ver Detalles
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="alert alert-info text-center py-5" role="alert">
+                    <i class="fas fa-inbox fa-3x mb-3 d-block text-info"></i>
+                    <h5>No hay soluciones disponibles en el mercado</h5>
+                    <p class="mb-0">Las soluciones aprobadas aparecerán aquí para que todos puedan explorarlas.</p>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .hover-shadow {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .hover-shadow:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
+    }
+</style>
+{% endblock %}
