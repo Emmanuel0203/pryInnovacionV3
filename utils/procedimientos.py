@@ -10,7 +10,8 @@ def crear_usuario_con_roles(email: str, password: str, roles_list: list,
                             campos_encriptar: str = "p_password",
                             is_active: bool = True,
                             is_staff: bool = False,
-                            is_superuser: bool = False) -> dict:
+                            is_superuser: bool = False,
+                            perfil: dict | None = None) -> dict:
     """
     Helper que encapsula la llamada al endpoint de procedimientos para crear usuario con roles.
 
@@ -32,8 +33,40 @@ def crear_usuario_con_roles(email: str, password: str, roles_list: list,
         "p_is_superuser": is_superuser
     }
 
-    resp = proc_client._make_request("POST", endpoint, payload=payload)
+    # If caller provided a perfil dict, forward it to the SP payload so the
+    # DB procedure can insert perfil atomically together with usuario and roles.
+    if perfil is not None:
+        # ensure it's JSON-serializable
+        payload["p_perfil"] = perfil
+
+    # Prefer a session-aware client (restores Authorization header from Flask session)
+    try:
+        from utils.api_client import get_api_client
+        client = get_api_client('procedimientos')
+    except Exception:
+        client = proc_client
+
+    resp = client._make_request("POST", endpoint, payload=payload)
     if not resp:
         logger.error("No se obtuvo respuesta del backend al ejecutar crear_usuario_con_roles")
         raise RuntimeError("No se obtuvo respuesta del backend al ejecutar crear_usuario_con_roles")
+    return resp
+
+
+def eliminar_usuario_completo(email: str) -> dict:
+    """Helper para ejecutar un procedimiento que elimina un usuario y sus asignaciones.
+
+    Este SP no existe por defecto; si lo creas en la base de datos con el nombre
+    `eliminar_usuario_completo` y un parámetro p_email, este helper lo invocará.
+    Se usa para rollback cuando la creación parcial falla (por ejemplo, perfil no creado).
+    """
+    endpoint = "procedimientos/ejecutarsp"
+    payload = {
+        "nombreSP": "eliminar_usuario_completo",
+        "p_email": email
+    }
+    resp = proc_client._make_request("POST", endpoint, payload=payload)
+    if not resp:
+        logger.error("No se obtuvo respuesta del backend al ejecutar eliminar_usuario_completo")
+        raise RuntimeError("No se obtuvo respuesta del backend al ejecutar eliminar_usuario_completo")
     return resp

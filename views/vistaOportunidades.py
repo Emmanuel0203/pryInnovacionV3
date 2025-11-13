@@ -7,6 +7,8 @@ from forms.formsOportunidades import OportunidadForm
 from datetime import datetime
 import os
 from werkzeug.utils import secure_filename
+from utils.api_client import get_api_client
+
 
 
 oportunidades_bp = Blueprint(
@@ -16,12 +18,12 @@ oportunidades_bp = Blueprint(
     url_prefix="/oportunidades"
 )
 
-oportunidad_client = APIClient("oportunidad")
 
 @oportunidades_bp.route("/", methods=["GET"])
 @login_required
 def list_oportunidades():
     try:
+        oportunidad_client = get_api_client('oportunidad')
         # Capturar parámetros de filtro de la URL
         selected_tipo = request.args.get('tipo_innovacion', '', type=str)
         selected_foco = request.args.get('foco_innovacion', '', type=str)
@@ -38,7 +40,7 @@ def list_oportunidades():
         }
 
         # Obtener información de usuarios
-        usuario_client = APIClient("usuario")
+        usuario_client = get_api_client("usuario")
         usuarios = usuario_client.get_all()
 
         # Mapear IDs a nombres para foco, tipo de innovación y usuarios
@@ -114,6 +116,8 @@ def list_oportunidades():
 @login_required
 def create_oportunidad():
     form = OportunidadForm()
+
+    oportunidad_client = get_api_client('oportunidad')
 
     # Cargar opciones dinámicamente desde la API
     try:
@@ -240,6 +244,7 @@ def create_oportunidad():
 @oportunidades_bp.route("/update/<int:codigo_oportunidad>", methods=["GET", "POST"])
 @login_required
 def update_oportunidad(codigo_oportunidad):
+    oportunidad_client = get_api_client('oportunidad')
     oportunidad = oportunidad_client.get_by_key("codigo_oportunidad", codigo_oportunidad)
     if not oportunidad:
         flash("Oportunidad no encontrada", "error")
@@ -361,6 +366,7 @@ def update_oportunidad(codigo_oportunidad):
 @oportunidades_bp.route("/delete/<int:codigo_oportunidad>", methods=["GET", "POST"])
 @login_required
 def delete_oportunidad(codigo_oportunidad):
+    oportunidad_client = get_api_client('oportunidad')
     oportunidad = oportunidad_client.get_by_key("codigo_oportunidad", codigo_oportunidad)
     if not oportunidad:
         flash("Oportunidad no encontrada", "error")
@@ -382,6 +388,7 @@ def delete_oportunidad(codigo_oportunidad):
 @oportunidades_bp.route("/detail/<int:codigo_oportunidad>", methods=["GET"])
 @login_required
 def detail_oportunidad(codigo_oportunidad):
+    oportunidad_client = get_api_client('oportunidad')
     oportunidad = oportunidad_client.get_by_id("codigo_oportunidad", codigo_oportunidad)
     if not oportunidad:
         flash("Oportunidad no encontrada", "error")
@@ -392,6 +399,7 @@ def detail_oportunidad(codigo_oportunidad):
 @oportunidades_bp.route("/confirmar/<int:codigo_oportunidad>", methods=["GET", "POST"])
 @login_required
 def confirmar_oportunidad(codigo_oportunidad):
+    oportunidad_client = get_api_client('oportunidad')
     oportunidad = oportunidad_client.get_by_id("codigo_oportunidad", codigo_oportunidad)
     if not oportunidad:
         flash("Oportunidad no encontrada", "error")

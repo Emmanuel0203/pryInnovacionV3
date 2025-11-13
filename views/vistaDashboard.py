@@ -1,7 +1,8 @@
 from flask import Blueprint, render_template, session, redirect, url_for, flash, current_app
 from flask_login import current_user, login_required
-from utils.api_client import APIClient
+from utils.api_client import APIClient, get_api_client
 from config_flask import API_CONFIG, DASHBOARD_METAS
+from utils.authorization import deny_roles
 from datetime import datetime, timedelta
 
 dashboard_bp = Blueprint('dashboard', __name__)
@@ -56,32 +57,35 @@ def last_n_months_labels(n=6):
 
 @dashboard_bp.route('/dashboard')
 @login_required
+@deny_roles(['Usuario'])
 def index():
     current_app.logger.debug('Accediendo al dashboard...')
     user_email = getattr(current_user, 'email', None)
     if not user_email:
         return redirect(url_for('login.login_view'))
 
-    # Build clients for each resource
-    ideas_client = APIClient('idea')
-    oportunidades_client = APIClient('oportunidad')
-    soluciones_client = APIClient('solucion')
+    # Build clients for each resource. Use get_api_client so Authorization header
+    # from session['api_token'] is restored into the client when available.
+    ideas_client = get_api_client('idea')
+    oportunidades_client = get_api_client('oportunidad')
+    soluciones_client = get_api_client('solucion')
 
     # Fetch data from API
     try:
-        ideas = ideas_client.get_ideas() or []
+        # APIClient exposes get_data() to retrieve 'datos' from the backend
+        ideas = ideas_client.get_data() or []
     except Exception as e:
         current_app.logger.exception('Error al obtener ideas')
         ideas = []
 
     try:
-        oportunidades = oportunidades_client.get_oportunidades() or []
+        oportunidades = oportunidades_client.get_data() or []
     except Exception as e:
         current_app.logger.exception('Error al obtener oportunidades')
         oportunidades = []
 
     try:
-        soluciones = soluciones_client.get_soluciones() or []
+        soluciones = soluciones_client.get_data() or []
     except Exception as e:
         current_app.logger.exception('Error al obtener soluciones')
         soluciones = []
@@ -330,6 +334,7 @@ def index():
 
 @dashboard_bp.route('/proyectos')
 @login_required
+@deny_roles(['Usuario'])
 def proyectos():
     # Lógica para cargar el dashboard
     return render_template('listar_proyectos.html')

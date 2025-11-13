@@ -20,7 +20,7 @@ class RegisterForm(FlaskForm):
     
     password = PasswordField('Contraseña', validators=[
         DataRequired(message='La contraseña es requerida'),
-        Length(min=6, message='La contraseña debe tener al menos 6 caracteres')
+        Length(min=3, message='La contraseña debe tener al menos 3 caracteres')
     ])
     
     confirm_password = PasswordField('Confirmar Contraseña', validators=[
@@ -35,6 +35,4 @@ class RegisterForm(FlaskForm):
     fecha_nacimiento = DateField('Fecha de Nacimiento', validators=[DataRequired()])
     direccion = StringField('Dirección', validators=[DataRequired()])
     descripcion = TextAreaField('Descripción')
-    area_expertise = StringField('Área de Expertise')
-    informacion_adicional = TextAreaField('Información Adicional')
     submit = SubmitField('Registrarse') 
