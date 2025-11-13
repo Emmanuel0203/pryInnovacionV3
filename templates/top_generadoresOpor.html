@@ -1,18 +1,18 @@
 {% extends "base.html" %}
 
-{% block title %}Top 10 Generadores de Ideas{% endblock %}
+{% block title %}Top 10 Generadores de Oportunidades{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
             <div class="page-title-box">
-                <h4 class="page-title">🏆 Top 10 Generadores de Ideas</h4>
-                <p class="text-muted">Los usuarios que más ideas han aportado al sistema</p>
+                <h4 class="page-title">🏆 Top 10 Generadores de Oportunidades</h4>
+                <p class="text-muted">Los usuarios que más oportunidades han aportado al sistema</p>
             </div>
         </div>
     </div>
-
+    
     <div class="row">
         <div class="col-12">
             <div class="card shadow-sm">
@@ -24,7 +24,7 @@
                                     <tr>
                                         <th class="text-center" style="width: 100px;">Posición</th>
                                         <th>Usuario</th>
-                                        <th class="text-center" style="width: 200px;">Ideas Generadas</th>
+                                        <th class="text-center" style="width: 220px;">Oportunidades Generadas</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -48,8 +48,8 @@
                                             <strong>{{ usuario }}</strong>
                                         </td>
                                         <td class="text-center">
-                                            <span class="badge bg-primary fs-6 px-3 py-2">
-                                                <i class="fas fa-lightbulb me-1"></i>
+                                            <span class="badge bg-success fs-6 px-3 py-2">
+                                                <i class="fas fa-briefcase me-1"></i>
                                                 {{ cantidad }}
                                             </span>
                                         </td>
@@ -62,19 +62,19 @@
                         <div class="alert alert-info text-center py-5" role="alert">
                             <i class="fas fa-info-circle fa-3x mb-3 d-block text-info"></i>
                             <h5>No hay datos disponibles</h5>
-                            <p class="mb-0">Aún no se han registrado ideas en el sistema.</p>
+                            <p class="mb-0">Aún no se han registrado oportunidades en el sistema.</p>
                         </div>
                     {% endif %}
                 </div>
             </div>
         </div>
     </div>
-
+    
     <!-- Botón volver -->
     <div class="row mt-3">
         <div class="col-12">
-            <a href="{{ url_for('ideas.list_ideas') }}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left me-1"></i> Volver a Ideas
+            <a href="{{ url_for('vistaOportunidad.list_oportunidades') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Volver a Oportunidades
             </a>
         </div>
     </div>

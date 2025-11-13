@@ -49,6 +49,7 @@ class APIClient:
             raise RuntimeError("BACKEND_LOCAL_URL no está configurada en el entorno")
 
         url = f"{self.base_url}/{endpoint}" if endpoint else f"{self.base_url}/{self.table_name}"
+        headers = {"Content-Type": "application/json"} if not files else None
 
         # Preferir session.request para conservar headers (Authorization, API-Key)
         # Optional debug: print outgoing headers when BACKEND_DEBUG_API_HEADERS=1

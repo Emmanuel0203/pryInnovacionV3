@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 
-{% block title %}Detalle de Idea{% endblock %}
+{% block title %}Detalle de Oportunidad{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
             <div class="page-title-box">
-                <h4 class="page-title">💡 Detalle de Idea</h4>
-                <p class="text-muted">Información completa de la idea</p>
+                <h4 class="page-title">📋 Detalle de Oportunidad</h4>
+                <p class="text-muted">Información completa de la oportunidad</p>
             </div>
         </div>
     </div>
@@ -16,11 +16,11 @@
     <!-- Botones de navegación -->
     <div class="row mb-3">
         <div class="col-12">
-            <a href="{{ url_for('ideas.mercado') }}" class="btn btn-secondary">
+            <a href="{{ url_for('vistaOportunidad.mercado') }}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left me-1"></i> Volver al Mercado
             </a>
-            <a href="{{ url_for('ideas.list_ideas') }}" class="btn btn-outline-secondary">
-                <i class="fas fa-list me-1"></i> Ir a Mis Ideas
+            <a href="{{ url_for('vistaOportunidad.list_oportunidades') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-list me-1"></i> Ir a Mis Oportunidades
             </a>
         </div>
     </div>
@@ -32,7 +32,7 @@
                 <!-- Header de la card -->
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">
-                        <i class="fas fa-lightbulb me-2"></i>{{ idea.titulo }}
+                        <i class="fas fa-lightbulb me-2"></i>{{ oportunidad.titulo }}
                     </h5>
                 </div>
 
@@ -46,7 +46,7 @@
                                     <i class="fas fa-align-left me-2"></i>Descripción
                                 </h6>
                                 <p class="text-muted" style="text-align: justify;">
-                                    {{ idea.descripcion }}
+                                    {{ oportunidad.descripcion }}
                                 </p>
                             </div>
 
@@ -56,8 +56,8 @@
                                     <i class="fas fa-tags me-2"></i>Palabras Clave
                                 </h6>
                                 <div>
-                                    {% if idea.palabras_claves %}
-                                        {% set keywords = idea.palabras_claves.split(',') %}
+                                    {% if oportunidad.palabras_claves %}
+                                        {% set keywords = oportunidad.palabras_claves.split(',') %}
                                         {% for keyword in keywords %}
                                             <span class="badge bg-secondary me-1 mb-1">{{ keyword.strip() }}</span>
                                         {% endfor %}
@@ -68,7 +68,7 @@
                             </div>
 
                             <!-- Archivo multimedia -->
-                            {% if idea.archivo_multimedia %}
+                            {% if oportunidad.archivo_multimedia %}
                             <div class="mb-4">
                                 <h6 class="text-primary border-bottom pb-2 mb-3">
                                     <i class="fas fa-file-alt me-2"></i>Archivo Multimedia
@@ -77,7 +77,7 @@
                                     <i class="fas fa-paperclip fa-2x me-3"></i>
                                     <div>
                                         <strong>Archivo adjunto:</strong><br>
-                                        <a href="{{ idea.archivo_multimedia_url }}" 
+                                        <a href="{{ url_for('static', filename=oportunidad.archivo_multimedia) }}" 
                                            target="_blank" 
                                            class="btn btn-sm btn-outline-primary mt-1">
                                             <i class="fas fa-download me-1"></i>Ver/Descargar archivo
@@ -90,12 +90,12 @@
 
                         <!-- Columna derecha: Información adicional -->
                         <div class="col-md-4">
-                            <!-- Estado -->
+                            <!-- Estado CORREGIDO -->
                             <div class="mb-4">
                                 <h6 class="text-primary border-bottom pb-2 mb-3">
                                     <i class="fas fa-info-circle me-2"></i>Estado
                                 </h6>
-                                {% if idea.estado %}
+                                {% if oportunidad.estado %}
                                     <span class="badge bg-success fs-6">
                                         <i class="fas fa-check-circle me-1"></i>Aprobada
                                     </span>
@@ -113,7 +113,7 @@
                                 </h6>
                                 <p class="mb-0">
                                     <span class="badge bg-info text-dark fs-6">
-                                        {{ idea.tipo_innovacion_nombre if idea.tipo_innovacion_nombre else 'No especificado' }}
+                                        {{ oportunidad.tipo_innovacion_nombre if oportunidad.tipo_innovacion_nombre else 'No especificado' }}
                                     </span>
                                 </p>
                             </div>
@@ -125,10 +125,24 @@
                                 </h6>
                                 <p class="mb-0">
                                     <span class="badge bg-warning text-dark fs-6">
-                                        {{ idea.foco_innovacion_nombre if idea.foco_innovacion_nombre else 'No especificado' }}
+                                        {{ oportunidad.foco_innovacion_nombre if oportunidad.foco_innovacion_nombre else 'No especificado' }}
                                     </span>
                                 </p>
                             </div>
+
+                            <!-- Recursos Requeridos -->
+                            {% if oportunidad.recursos_requeridos %}
+                            <div class="mb-4">
+                                <h6 class="text-primary border-bottom pb-2 mb-3">
+                                    <i class="fas fa-coins me-2"></i>Recursos Requeridos
+                                </h6>
+                                <div class="alert alert-success">
+                                    <h4 class="mb-0">
+                                        ${{ "{:,.0f}".format(oportunidad.recursos_requeridos) }}
+                                    </h4>
+                                </div>
+                            </div>
+                            {% endif %}
 
                             <!-- Información del Creador -->
                             <div class="mb-4">
@@ -137,7 +151,7 @@
                                 </h6>
                                 <p class="mb-1">
                                     <i class="fas fa-envelope me-2 text-muted"></i>
-                                    <small>{{ idea.creador_por }}</small>
+                                    <small>{{ oportunidad.creador_por }}</small>
                                 </p>
                             </div>
 
@@ -148,23 +162,22 @@
                                 </h6>
                                 <p class="mb-0">
                                     <i class="fas fa-calendar-alt me-2 text-muted"></i>
-                                    {% if idea.fecha_creacion %}
-                                        {% set fecha = idea.fecha_creacion[:10].split('-') %}
-                                        {{ fecha[2] }}/{{ fecha[1] }}/{{ fecha[0] }}
+                                    {% if oportunidad.fecha_creacion %}
+                                        {{ oportunidad.fecha_creacion.strftime("%d/%m/%Y") if oportunidad.fecha_creacion is not string else oportunidad.fecha_creacion[:10] }}
                                     {% else %}
                                         No disponible
                                     {% endif %}
                                 </p>
                             </div>
 
-                            <!-- Código de Idea -->
+                            <!-- Código de Oportunidad -->
                             <div class="mb-4">
                                 <h6 class="text-primary border-bottom pb-2 mb-3">
                                     <i class="fas fa-hashtag me-2"></i>Código
                                 </h6>
                                 <p class="mb-0">
                                     <span class="badge bg-dark fs-6">
-                                        #{{ idea.codigo_idea }}
+                                        #{{ oportunidad.codigo_oportunidad }}
                                     </span>
                                 </p>
                             </div>
@@ -180,11 +193,8 @@
                             Toda la información presentada es proporcionada por el creador
                         </small>
                         <div>
-                            <a href="{{ url_for('ideas.list_ideas') }}" class="btn btn-secondary">
-                                <i class="fas fa-list me-1"></i>Volver a Ideas
-                            </a>
-                            <a href="{{ url_for('ideas.update_idea', codigo_idea=idea.codigo_idea) }}" class="btn btn-primary">
-                                <i class="fas fa-edit me-1"></i>Editar
+                            <a href="{{ url_for('vistaOportunidad.mercado') }}" class="btn btn-secondary">
+                                <i class="fas fa-store me-1"></i>Volver al Mercado
                             </a>
                         </div>
                     </div>

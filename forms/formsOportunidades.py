@@ -6,9 +6,8 @@ from flask_wtf.file import FileAllowed
 class OportunidadForm(FlaskForm):
     """
     Formulario de Oportunidad.
-    Se encarga únicamente de definir los campos y validaciones.
-    Las opciones de los select son cargadas dinámicamente
-    desde la vista usando el servicio.
+    Define los campos y validaciones, y permite cargar dinámicamente
+    las opciones de los campos select desde la vista.
     """
 
     titulo = StringField('Título', validators=[
@@ -30,11 +29,11 @@ class OportunidadForm(FlaskForm):
         DataRequired(message='Los recursos requeridos son necesarios')
     ])
 
-    tipo_innovacion = SelectField('Tipo de Innovación', coerce=int, validators=[
+    id_tipo_innovacion = SelectField('Tipo de Innovación', coerce=int, validators=[
         DataRequired(message='Debe seleccionar un tipo de innovación')
     ])
 
-    foco_innovacion = SelectField('Foco de Innovación', coerce=int, validators=[
+    id_foco_innovacion = SelectField('Foco de Innovación', coerce=int, validators=[
         DataRequired(message='Debe seleccionar un foco de innovación')
     ])
 
@@ -50,20 +49,35 @@ class OportunidadForm(FlaskForm):
 
     submit = SubmitField('Guardar')
 
-    def load_dynamic_choices(self, focos, tipos):
+    # 🔹 Carga dinámica y selección automática (para editar)
+    def load_dynamic_choices(self, focos, tipos, selected_foco=None, selected_tipo=None):
         """
-        Load dynamic choices for the form fields.
-
-        Parameters
-        ----------
-        focos : list
-            List of focus options fetched from the API.
-        tipos : list
-            List of innovation types fetched from the API.
+        Carga las opciones dinámicamente para los campos de selección.
+        Maneja tanto tuplas como diccionarios.
         """
-        self.foco_innovacion.choices = [(f['id_foco_innovacion'], f['name']) for f in focos]
-        self.tipo_innovacion.choices = [(t['id_tipo_innovacion'], t['name']) for t in tipos]
+        # Manejar si vienen como tuplas o como diccionarios
+        if focos and isinstance(focos[0], tuple):
+            # Ya vienen como tuplas (id, nombre)
+            self.id_foco_innovacion.choices = focos
+        else:
+            # Vienen como diccionarios
+            self.id_foco_innovacion.choices = [(f['id_foco_innovacion'], f['name']) for f in focos]
+        
+        if tipos and isinstance(tipos[0], tuple):
+            # Ya vienen como tuplas (id, nombre)
+            self.id_tipo_innovacion.choices = tipos
+        else:
+            # Vienen como diccionarios
+            self.id_tipo_innovacion.choices = [(t['id_tipo_innovacion'], t['name']) for t in tipos]
 
-        # Log the choices for debugging
-        print(f"Foco Innovacion Choices: {self.foco_innovacion.choices}")
-        print(f"Tipo Innovacion Choices: {self.tipo_innovacion.choices}")
+        # Asignar valores seleccionados
+        if selected_foco:
+            self.id_foco_innovacion.data = selected_foco
+        if selected_tipo:
+            self.id_tipo_innovacion.data = selected_tipo
+
+        # Debug
+        print("✔ Focos cargados:", self.id_foco_innovacion.choices)
+        print("✔ Tipos cargados:", self.id_tipo_innovacion.choices)
+        print(f"✔ Foco seleccionado: {self.id_foco_innovacion.data}")
+        print(f"✔ Tipo seleccionado: {self.id_tipo_innovacion.data}")

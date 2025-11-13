@@ -46,7 +46,7 @@ class IdeaForm(FlaskForm):
     
     fecha_creacion = DateField('Fecha de creación', format='%Y-%m-%d', validators=[Optional()])
     creador_por = StringField('Creador por', validators=[Optional()])
-    estado = BooleanField('Estado activo', default=True)
+    estado = BooleanField('Aprobada')
 
     
     submit = SubmitField('Guardar Idea')

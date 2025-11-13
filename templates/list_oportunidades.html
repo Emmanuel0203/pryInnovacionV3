@@ -1,158 +1,187 @@
 {% extends "base.html" %}
 
-{% block head %}
-<!-- DataTables -->
-<link href="{{ url_for('static', filename='libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css') }}" rel="stylesheet" type="text/css" />
-<link href="{{ url_for('static', filename='libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css') }}" rel="stylesheet" type="text/css" />
-{% endblock head %}
+{% block title %}Lista de Oportunidades{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <div class="page-title-box">
-            <h4>Lista de Oportunidades</h4>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box">
+                <h4 class="page-title">Gestión de Oportunidades de Innovación</h4>
+            </div>
         </div>
     </div>
-</div>
 
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body">
-                <h4 class="card-title mb-4">
-                    Oportunidades
-                    <a class="btn btn-success float-right" href="{{ url_for('vistaOportunidad.create_oportunidad') }}">Crear Nueva Oportunidad</a>
-                </h4>
+    <!-- Filtros -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Filtros</h5>
+                    <form method="GET" action="{{ url_for('vistaOportunidad.list_oportunidades') }}">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Tipo de Innovación</label>
+                                <select name="tipo_innovacion" class="form-select">
+                                    <option value="">Todos</option>
+                                    {% for tipo in tipos %}
+                                    <option value="{{ tipo.id_tipo_innovacion }}" 
+                                            {% if request.args.get('tipo_innovacion') == tipo.id_tipo_innovacion|string %}selected{% endif %}>
+                                        {{ tipo.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Foco de Innovación</label>
+                                <select name="foco_innovacion" class="form-select">
+                                    <option value="">Todos</option>
+                                    {% for foco in focos %}
+                                    <option value="{{ foco.id_foco_innovacion }}"
+                                            {% if request.args.get('foco_innovacion') == foco.id_foco_innovacion|string %}selected{% endif %}>
+                                        {{ foco.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Estado</label>
+                                <select name="estado" class="form-select">
+                                    <option value="">Todos</option>
+                                    <option value="1" {% if request.args.get('estado') == '1' %}selected{% endif %}>Aprobadas</option>
+                                    <option value="0" {% if request.args.get('estado') == '0' %}selected{% endif %}>Pendientes</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">&nbsp;</label>
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-filter me-1"></i> Filtrar
+                                </button>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">&nbsp;</label>
+                                <a href="{{ url_for('vistaOportunidad.list_oportunidades') }}" class="btn btn-secondary w-100">
+                                    <i class="fas fa-redo me-1"></i> Limpiar
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                <!-- Filtros -->
-                <form method="get" action="{{ url_for('vistaOportunidad.list_oportunidades') }}">
-                    <div class="row mb-4">
-                        <div class="col-md-3">
-                            <label for="tipo_innovacion" class="form-label">Tipo de Innovación</label>
-                            <select id="tipo_innovacion" name="tipo_innovacion" class="form-control">
-                                <option value="">-- Todos --</option>
-                                {% for value, label in form.tipo_innovacion.choices %}
-                                    {% if value != '' %}
-                                        <option value="{{ value }}" {% if selected_tipo == value|string %}selected{% endif %}>{{ label }}</option>
-                                    {% endif %}
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label for="foco_innovacion" class="form-label">Foco de Innovación</label>
-                            <select id="foco_innovacion" name="foco_innovacion" class="form-control">
-                                <option value="">-- Todos --</option>
-                                {% for value, label in form.foco_innovacion.choices %}
-                                    {% if value != '' %}
-                                        <option value="{{ value }}" {% if selected_foco == value|string %}selected{% endif %}>{{ label }}</option>
-                                    {% endif %}
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label for="estado" class="form-label">Estado</label>
-                            <select id="estado" name="estado" class="form-control">
-                                <option value="">-- Todos --</option>
-                                <option value="True" {% if selected_estado == 'True' %}selected{% endif %}>Aprobada</option>
-                                <option value="False" {% if selected_estado == 'False' %}selected{% endif %}>Pendiente</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3 d-flex align-items-end">
-                            <button type="submit" class="btn btn-primary me-2">Aplicar Filtros</button>
-                            <a href="{{ url_for('vistaOportunidad.list_oportunidades') }}" class="btn btn-secondary">Limpiar</a>
-                        </div>
-                    </div>
-                </form>
+    <!-- Botón Crear Nueva Oportunidad -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <a href="{{ url_for('vistaOportunidad.create_oportunidad') }}" class="btn btn-success">
+                <i class="fas fa-plus-circle me-1"></i> Nueva Oportunidad
+            </a>
+        </div>
+    </div>
 
-                <!-- Tabla de Oportunidades -->
-                <div class="table-responsive">
-                    <table id="datatable" class="table table-bordered dt-responsive nowrap" style="width: 100%;">
-                        <thead>
-                            <tr>
-                                <th>Código</th>
-                                <th>Título</th>
-                                <th>Descripción</th>
-                                <th>Palabras clave</th>
-                                <th>Tipo de Innovación</th>
-                                <th>Foco de Innovación</th>
-                                <th>Fecha de Creación</th>
-                                <th>Archivo Multimedia</th>
-                                <th>Creado por</th>
-                                <th>Estado</th>
-                                <th class="text-center">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% if oportunidades %}
-                                {% for oportunidad in oportunidades %}
-                                <tr {% if oportunidad.estado %} class="table-success" {% else %} class="table-warning" {% endif %}>
-                                    <td>{{ oportunidad.codigo_oportunidad }}</td>
-                                    <td>
-                                        <a href="{{ url_for('vistaOportunidad.detail_oportunidad', codigo_oportunidad=oportunidad.codigo_oportunidad) }}">
-                                            {{ oportunidad.titulo }}
-                                        </a>
-                                    </td>
-                                    <td>{{ oportunidad.descripcion }}</td>
-                                    <td>{{ oportunidad.palabras_claves }}</td>
-                                    <td>{{ oportunidad.tipo_innovacion_nombre }}</td>
-                                    <td>{{ oportunidad.foco_innovacion_nombre }}</td>
-                                    <td>{{ oportunidad.fecha_creacion }}</td>
-                                    <td>
-                                        {% if oportunidad.archivo_multimedia %}
-                                            {% if oportunidad.archivo_multimedia.startswith('/static') %}
-                                                <a href="{{ oportunidad.archivo_multimedia }}" target="_blank">Ver archivo</a>
-                                            {% else %}
-                                                <a href="{{ url_for('static', filename=oportunidad.archivo_multimedia) }}" target="_blank">Ver archivo</a>
-                                            {% endif %}
-                                        {% else %}
-                                            No disponible
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ oportunidad.creador_por or oportunidad.creador_por_nombre }}</td>
-                                    <td>
-                                        {% if oportunidad.estado %}
-                                            <span class="badge badge-success">Aprobada</span>
-                                        {% else %}
-                                            <span class="badge badge-warning">Pendiente</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="text-center">
-                                        <a href="{{ url_for('vistaOportunidad.update_oportunidad', codigo_oportunidad=oportunidad.codigo_oportunidad) }}" class="btn btn-warning btn-sm" style="width: 100px;">Editar</a>
-                                        <a href="{{ url_for('vistaOportunidad.delete_oportunidad', codigo_oportunidad=oportunidad.codigo_oportunidad) }}" class="btn btn-danger btn-sm" style="width: 100px;">Eliminar</a>
-                                        <form action="{{ url_for('vistaOportunidad.confirmar_oportunidad', codigo_oportunidad=oportunidad.codigo_oportunidad) }}" method="post">
-                                            {{ form.hidden_tag() }}
-                                            <button type="submit" class="btn btn-success btn-sm" style="width: 100px;">
-                                                <i class="fas fa-check"></i> Aprobar
-                                            </button>
-                                        </form>
-                                    </td>
-                                </tr>
-                                <script>
-                                    console.log("Código de oportunidad: {{ oportunidad.codigo_oportunidad }}");
-                                </script>
-                                {% endfor %}
-                            {% else %}
+    <!-- Tabla de Oportunidades -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">
+                        Lista de Oportunidades 
+                        <span class="badge bg-primary">{{ oportunidades|length }} oportunidades</span>
+                    </h5>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover table-bordered">
+                            <thead class="table-light">
                                 <tr>
-                                    <td colspan="11" class="text-center">No hay oportunidades disponibles.</td>
+                                    <th>Fecha</th>
+                                    <th>Título</th>
+                                    <th>Autor</th>
+                                    <th>Tipo</th>
+                                    <th>Foco</th>
+                                    <th>Estado</th>
+                                    <th class="text-center" style="width: 150px;">Acciones</th>
                                 </tr>
-                            {% endif %}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {% if oportunidades %}
+                                    {% for oportunidad in oportunidades %}
+                                    <tr>
+                                        <!-- FECHA -->
+                                        <td>
+                                            {% if oportunidad.fecha_creacion %}
+                                                {% set fecha = oportunidad.fecha_creacion[:10].split('-') %}
+                                                {{ fecha[2] }}/{{ fecha[1] }}/{{ fecha[0] }}
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
+                                        </td>
+
+                                        <!-- TÍTULO -->
+                                        <td>{{ oportunidad.titulo or 'Sin título' }}</td>
+
+                                        <!-- AUTOR -->
+                                        <td>{{ oportunidad.creador_por or 'Sin autor' }}</td>
+
+                                        <!-- TIPO DE INNOVACIÓN -->
+                                        <td>{{ tipo_dict.get(oportunidad.id_tipo_innovacion, '—') }}</td>
+
+                                        <!-- FOCO DE INNOVACIÓN -->
+                                        <td>{{ foco_dict.get(oportunidad.id_foco_innovacion, '—') }}</td>
+
+                                        <!-- ESTADO -->
+                                        <td>
+                                            {% if oportunidad.estado %}
+                                                <span class="badge bg-success">Aprobada</span>
+                                            {% else %}
+                                                <span class="badge bg-warning text-dark">Pendiente</span>
+                                            {% endif %}
+                                        </td>
+
+                                        <!-- ACCIONES -->
+                                        <td class="text-center">
+                                            <!-- Ver -->
+                                            <a href="{{ url_for('vistaOportunidad.detail_oportunidad', codigo_oportunidad=oportunidad.codigo_oportunidad) }}" 
+                                               class="btn btn-outline-info btn-sm" 
+                                               title="Ver">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+
+                                            <!-- Editar -->
+                                            <a href="{{ url_for('vistaOportunidad.update_oportunidad', codigo_oportunidad=oportunidad.codigo_oportunidad) }}" 
+                                               class="btn btn-outline-primary btn-sm" 
+                                               title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+
+                                            <!-- Eliminar -->
+                                            <form method="POST" 
+                                                  action="{{ url_for('vistaOportunidad.delete_oportunidad', codigo_oportunidad=oportunidad.codigo_oportunidad) }}" 
+                                                  style="display:inline;" 
+                                                  onsubmit="return confirm('¿Seguro que quieres eliminar esta oportunidad?');">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" 
+                                                        class="btn btn-outline-danger btn-sm" 
+                                                        title="Eliminar">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted py-4">
+                                            <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                                            No hay oportunidades registradas.
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 {% endblock %}
-
-{% block scripts %}
-<script src="{{ url_for('static', filename='libs/datatables.net/js/jquery.dataTables.min.js') }}"></script>
-<script src="{{ url_for('static', filename='libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
-<script src="{{ url_for('static', filename='libs/datatables.net-responsive/js/dataTables.responsive.min.js') }}"></script>
-<script src="{{ url_for('static', filename='libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js') }}"></script>
-<script>
-    $(document).ready(function() {
-        $('#datatable').DataTable();
-    });
-</script>
-{% endblock scripts %}

@@ -1,155 +1,187 @@
 {% extends "base.html" %}
 
-{% block head %}
-<!-- DataTables -->
-<link href="{{ url_for('static', filename='libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css') }}" rel="stylesheet" type="text/css" />
-<link href="{{ url_for('static', filename='libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css') }}" rel="stylesheet" type="text/css" />
-{% endblock head %}
+{% block title %}Lista de Soluciones{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <div class="page-title-box">
-            <h4>Lista de Soluciones</h4>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box">
+                <h4 class="page-title">Gestión de Soluciones de Innovación</h4>
+            </div>
         </div>
     </div>
-</div>
 
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body">
-                <h4 class="card-title mb-4">
-                    Soluciones
-                    <a class="btn btn-success float-right" href="{{ url_for('vistaSolucion.create_solucion') }}">Crear Nueva Solución</a>
-                </h4>
-
-                <!-- Filtros -->
-                <form method="get" action="{{ url_for('vistaSolucion.list_solucion') }}">
-                    <div class="row mb-4">
-                        <div class="col-md-3">
-                            <label for="tipo_innovacion" class="form-label">Tipo de Innovación</label>
-                            <select id="tipo_innovacion" name="tipo_innovacion" class="form-control">
-                                <option value="">-- Todos --</option>
-                                {% for value, label in form.tipo_innovacion.choices %}
-                                    {% if value != '' %}
-                                        <option value="{{ value }}" {% if selected_tipo == value|string %}selected{% endif %}>{{ label }}</option>
-                                    {% endif %}
-                                {% endfor %}
-                            </select>
+    <!-- Filtros -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Filtros</h5>
+                    <form method="GET" action="{{ url_for('vistaSolucion.list_solucion') }}">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Tipo de Innovación</label>
+                                <select name="tipo_innovacion" class="form-select">
+                                    <option value="">Todos</option>
+                                    {% for tipo in tipos %}
+                                    <option value="{{ tipo.id_tipo_innovacion }}" 
+                                            {% if request.args.get('tipo_innovacion') == tipo.id_tipo_innovacion|string %}selected{% endif %}>
+                                        {{ tipo.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Foco de Innovación</label>
+                                <select name="foco_innovacion" class="form-select">
+                                    <option value="">Todos</option>
+                                    {% for foco in focos %}
+                                    <option value="{{ foco.id_foco_innovacion }}"
+                                            {% if request.args.get('foco_innovacion') == foco.id_foco_innovacion|string %}selected{% endif %}>
+                                        {{ foco.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Estado</label>
+                                <select name="estado" class="form-select">
+                                    <option value="">Todos</option>
+                                    <option value="1" {% if request.args.get('estado') == '1' %}selected{% endif %}>Aprobadas</option>
+                                    <option value="0" {% if request.args.get('estado') == '0' %}selected{% endif %}>Pendientes</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">&nbsp;</label>
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-filter me-1"></i> Filtrar
+                                </button>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">&nbsp;</label>
+                                <a href="{{ url_for('vistaSolucion.list_solucion') }}" class="btn btn-secondary w-100">
+                                    <i class="fas fa-redo me-1"></i> Limpiar
+                                </a>
+                            </div>
                         </div>
-                        <div class="col-md-3">
-                            <label for="foco_innovacion" class="form-label">Foco de Innovación</label>
-                            <select id="foco_innovacion" name="foco_innovacion" class="form-control">
-                                <option value="">-- Todos --</option>
-                                {% for value, label in form.foco_innovacion.choices %}
-                                    {% if value != '' %}
-                                        <option value="{{ value }}" {% if selected_foco == value|string %}selected{% endif %}>{{ label }}</option>
-                                    {% endif %}
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label for="estado" class="form-label">Estado</label>
-                            <select id="estado" name="estado" class="form-control">
-                                <option value="">-- Todos --</option>
-                                <option value="True" {% if selected_estado == 'True' %}selected{% endif %}>Aprobada</option>
-                                <option value="False" {% if selected_estado == 'False' %}selected{% endif %}>Pendiente</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3 d-flex align-items-end">
-                            <button type="submit" class="btn btn-primary me-2">Aplicar Filtros</button>
-                            <a href="{{ url_for('vistaSolucion.list_solucion') }}" class="btn btn-secondary">Limpiar</a>
-                        </div>
-                    </div>
-                </form>
-
-                <!-- Tabla de Soluciones -->
-                <div class="table-responsive">
-                    <table id="datatable" class="table table-bordered dt-responsive nowrap" style="width: 100%;">
-                        <thead>
-                            <tr>
-                                <th>Código Solución</th>
-                                <th>Título</th>
-                                <th>Descripción</th>
-                                <th>Palabras clave</th>
-                                <th>Tipo de Innovación</th>
-                                <th>Foco de Innovación</th>
-                                <th>Fecha de Creación</th>
-                                <th>Archivo Multimedia</th>
-                                <th>Creado por</th>
-                                <th>Estado</th>
-                                <th class="text-center">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% if soluciones %}
-                                {% for solucion in soluciones %}
-                                <tr {% if solucion.estado %} class="table-success" {% else %} class="table-warning" {% endif %}>
-                                    <td>{{ solucion.codigo_solucion }}</td>
-                                    <td>
-                                        <a href="{{ url_for('vistaSolucion.detail_solucion', codigo_solucion=solucion.codigo_solucion) }}">
-                                            {{ solucion.titulo }}
-                                        </a>
-                                    </td>
-                                    <td>{{ solucion.descripcion }}</td>
-                                    <td>{{ solucion.palabras_claves }}</td>
-                                    <td>{{ solucion.tipo_innovacion_nombre }}</td>
-                                    <td>{{ solucion.foco_innovacion_nombre }}</td>
-                                    <td>{{ solucion.fecha_creacion }}</td>
-                                    <td>
-                                        {% if solucion.archivo_multimedia %}
-                                            <a href="{{ url_for('static', filename='media/' ~ solucion.archivo_multimedia) }}" target="_blank">Ver archivo</a>
-                                        {% else %}
-                                            No disponible
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ solucion.creador_por }}</td>
-                                    <td>
-                                        {% if solucion.estado %}
-                                            <span class="badge badge-success">Aprobada</span>
-                                        {% else %}
-                                            <span class="badge badge-warning">Pendiente</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="text-center">
-                                        <a href="{{ url_for('vistaSolucion.update_solucion', codigo_solucion=solucion.codigo_solucion) }}" class="btn btn-warning btn-sm" style="width: 100px;">Editar</a>
-                                        <a href="{{ url_for('vistaSolucion.delete_solucion', codigo_solucion=solucion.codigo_solucion) }}" class="btn btn-danger btn-sm" style="width: 100px;">Eliminar</a>
-                                        <form action="{{ url_for('vistaSolucion.confirmar_solucion', codigo_solucion=solucion.codigo_solucion) }}" method="post">
-                                            {{ form.hidden_tag() }}
-                                            <button type="submit" class="btn btn-success btn-sm" style="width: 100px;">
-                                                <i class="fas fa-check"></i> Aprobar
-                                            </button>
-                                        </form>
-                                    </td>
-                                </tr>
-                                <script>
-                                    console.log("Código de solución: {{ solucion.codigo_solucion }}");
-                                </script>
-                                {% endfor %}
-                            {% else %}
-                                <tr>
-                                    <td colspan="11" class="text-center">No hay soluciones disponibles.</td>
-                                </tr>
-                            {% endif %}
-                        </tbody>
-                    </table>
+                    </form>
                 </div>
+            </div>
+        </div>
+    </div>
 
+    <!-- Botón Crear Nueva Solución -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <a href="{{ url_for('vistaSolucion.create_solucion') }}" class="btn btn-success">
+                <i class="fas fa-plus-circle me-1"></i> Nueva Solución
+            </a>
+        </div>
+    </div>
+
+    <!-- Tabla de Soluciones -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">
+                        Lista de Soluciones 
+                        <span class="badge bg-primary">{{ soluciones|length }} soluciones</span>
+                    </h5>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Título</th>
+                                    <th>Autor</th>
+                                    <th>Tipo</th>
+                                    <th>Foco</th>
+                                    <th>Estado</th>
+                                    <th class="text-center" style="width: 150px;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if soluciones %}
+                                    {% for solucion in soluciones %}
+                                    <tr>
+                                        <!-- FECHA -->
+                                        <td>
+                                            {% if solucion.fecha_creacion %}
+                                                {% set fecha = solucion.fecha_creacion[:10].split('-') %}
+                                                {{ fecha[2] }}/{{ fecha[1] }}/{{ fecha[0] }}
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
+                                        </td>
+
+                                        <!-- TÍTULO -->
+                                        <td>{{ solucion.titulo or 'Sin título' }}</td>
+
+                                        <!-- AUTOR -->
+                                        <td>{{ solucion.creador_por or 'Sin autor' }}</td>
+
+                                        <!-- TIPO DE INNOVACIÓN -->
+                                        <td>{{ solucion.tipo_innovacion_nombre or '—' }}</td>
+
+                                        <!-- FOCO DE INNOVACIÓN -->
+                                        <td>{{ solucion.foco_innovacion_nombre or '—' }}</td>
+
+                                        <!-- ESTADO -->
+                                        <td>
+                                            {% if solucion.estado %}
+                                                <span class="badge bg-success">Aprobada</span>
+                                            {% else %}
+                                                <span class="badge bg-warning text-dark">Pendiente</span>
+                                            {% endif %}
+                                        </td>
+
+                                        <!-- ACCIONES -->
+                                        <td class="text-center">
+                                            <!-- Ver - ✅ CAMBIO AQUÍ -->
+                                            <a href="{{ url_for('vistaSolucion.detail_solucion', codigo_solucion=solucion.codigo_solucion) }}" 
+                                               class="btn btn-outline-info btn-sm" 
+                                               title="Ver">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+
+                                            <!-- Editar -->
+                                            <a href="{{ url_for('vistaSolucion.update_solucion', codigo_solucion=solucion.codigo_solucion) }}" 
+                                               class="btn btn-outline-primary btn-sm" 
+                                               title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+
+                                            <!-- Eliminar -->
+                                            <form method="POST" 
+                                                  action="{{ url_for('vistaSolucion.delete_solucion', codigo_solucion=solucion.codigo_solucion) }}" 
+                                                  style="display:inline;" 
+                                                  onsubmit="return confirm('¿Seguro que quieres eliminar esta solución?');">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" 
+                                                        class="btn btn-outline-danger btn-sm" 
+                                                        title="Eliminar">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted py-4">
+                                            <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                                            No hay soluciones registradas.
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock content %}
-
-{% block scripts %}
-<script src="{{ url_for('static', filename='libs/datatables.net/js/jquery.dataTables.min.js') }}"></script>
-<script src="{{ url_for('static', filename='libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
-<script src="{{ url_for('static', filename='libs/datatables.net-responsive/js/dataTables.responsive.min.js') }}"></script>
-<script src="{{ url_for('static', filename='libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js') }}"></script>
-<script>
-    $(document).ready(function() {
-        $('#datatable').DataTable();
-    });
-</script>
-{% endblock scripts %}
+{% endblock %}
