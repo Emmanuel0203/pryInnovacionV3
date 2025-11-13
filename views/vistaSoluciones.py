@@ -24,6 +24,13 @@ solucion_client = APIClient("solucion")
 @login_required
 def list_solucion():
     try:
+        # Capturar parámetros de filtro de la URL
+        selected_tipo = request.args.get('tipo_innovacion', '', type=str)
+        selected_foco = request.args.get('foco_innovacion', '', type=str)
+        selected_estado = request.args.get('estado', '', type=str)
+        
+        current_app.logger.debug(f"Filtros aplicados - Tipo: {selected_tipo}, Foco: {selected_foco}, Estado: {selected_estado}")
+
         soluciones = solucion_client.get_all()
         focos_tipos = {
             "focos": solucion_client.fetch_endpoint_data("foco_innovacion"),
@@ -39,12 +46,39 @@ def list_solucion():
             solucion['foco_innovacion_nombre'] = foco_map.get(solucion['id_foco_innovacion'], "Desconocido")
             solucion['tipo_innovacion_nombre'] = tipo_map.get(solucion['id_tipo_innovacion'], "Desconocido")
 
-        current_app.logger.debug(f"Soluciones procesadas: {soluciones}")
+        # Aplicar filtros a las soluciones
+        soluciones_filtradas = []
+        for solucion in soluciones:
+            # Filtro por tipo de innovación
+            if selected_tipo and str(solucion.get('id_tipo_innovacion', '')) != selected_tipo:
+                continue
+            
+            # Filtro por foco de innovación
+            if selected_foco and str(solucion.get('id_foco_innovacion', '')) != selected_foco:
+                continue
+            
+            # Filtro por estado
+            if selected_estado:
+                if selected_estado == 'True' and not solucion.get('estado', False):
+                    continue
+                elif selected_estado == 'False' and solucion.get('estado', False):
+                    continue
+            
+            soluciones_filtradas.append(solucion)
+
+        current_app.logger.debug(f"Soluciones después de filtros: {len(soluciones_filtradas)} de {len(soluciones)}")
 
         # Configurar las opciones dinámicas en el formulario
         form = SolucionForm()
-        form.foco_innovacion.choices = [(f['id_foco_innovacion'], f['name']) for f in focos_tipos['focos']]
-        form.tipo_innovacion.choices = [(t['id_tipo_innovacion'], t['name']) for t in focos_tipos['tipos']]
+        # Añadir opción vacía para "Todos"
+        form.foco_innovacion.choices = [('', '-- Todos --')] + [(f['id_foco_innovacion'], f['name']) for f in focos_tipos['focos']]
+        form.tipo_innovacion.choices = [('', '-- Todos --')] + [(t['id_tipo_innovacion'], t['name']) for t in focos_tipos['tipos']]
+
+        # Establecer valores seleccionados en el formulario
+        if selected_tipo:
+            form.tipo_innovacion.data = int(selected_tipo) if selected_tipo.isdigit() else None
+        if selected_foco:
+            form.foco_innovacion.data = int(selected_foco) if selected_foco.isdigit() else None
 
         # Verificar que las opciones se asignaron correctamente
         current_app.logger.debug(f"Opciones de foco_innovacion: {form.foco_innovacion.choices}")
@@ -53,14 +87,20 @@ def list_solucion():
     except Exception as e:
         current_app.logger.exception("Error al procesar soluciones")
         flash(f"Error al obtener las soluciones: {e}", "danger")
-        soluciones = []
+        soluciones_filtradas = []
+        selected_tipo = selected_foco = selected_estado = ''
         form = SolucionForm()
-        form.foco_innovacion.choices = []
-        form.tipo_innovacion.choices = []
+        form.foco_innovacion.choices = [('', '-- Todos --')]
+        form.tipo_innovacion.choices = [('', '-- Todos --')]
 
-    current_app.logger.debug(f"Datos de soluciones: {soluciones}")
+    current_app.logger.debug(f"Datos de soluciones: {soluciones_filtradas}")
 
-    return render_template("list_soluciones.html", soluciones=soluciones, form=form)
+    return render_template("list_soluciones.html", 
+                         soluciones=soluciones_filtradas, 
+                         form=form, 
+                         selected_tipo=selected_tipo,
+                         selected_foco=selected_foco,
+                         selected_estado=selected_estado)
 
 
 
@@ -185,11 +225,29 @@ def update_solucion(codigo_solucion):
             "tipos": []
         }
 
-    form = SolucionForm(data=solution[0])
+    # Create the form, set choices first, then populate with existing data so SelectFields preselect correctly
+    form = SolucionForm()
     form.foco_innovacion.choices = [(f['id_foco_innovacion'], f['name']) for f in focos_tipos['focos']]
     form.tipo_innovacion.choices = [(t['id_tipo_innovacion'], t['name']) for t in focos_tipos['tipos']]
+    # populate form fields from the fetched solution
+    form.process(data=solution[0])
 
     if request.method == "POST" and form.validate_on_submit():
+        # handle possible uploaded file
+        archivo = request.files.get('archivo_multimedia')
+        archivo_multimedia = None
+        if archivo and archivo.filename:
+            from werkzeug.utils import secure_filename
+            import os
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            filename = f"{timestamp}_{secure_filename(archivo.filename)}"
+            upload_folder = os.path.join(current_app.root_path, 'static', 'uploads')
+            os.makedirs(upload_folder, exist_ok=True)
+            file_path = os.path.join(upload_folder, filename)
+            archivo.save(file_path)
+            # store relative path for DB/static serving
+            archivo_multimedia = f"uploads/{filename}"
+
         payload = {
             "id_tipo_innovacion": form.tipo_innovacion.data,
             "id_foco_innovacion": form.foco_innovacion.data,
@@ -197,11 +255,12 @@ def update_solucion(codigo_solucion):
             "descripcion": form.descripcion.data,
             "palabras_claves": form.palabras_claves.data,
             "recursos_requeridos": form.recursos_requeridos.data,
-            "archivo_multimedia": None,
+            "archivo_multimedia": archivo_multimedia,
             "creador_por": solution[0].get("creador_por"),
             "desarrollador_por": solution[0].get("desarrollador_por"),
             "area_unidad_desarrollo": solution[0].get("area_unidad_desarrollo"),
-            "estado": solution[0].get("estado")
+            # use the (possibly edited) estado value from the form
+            "estado": form.estado.data if hasattr(form, 'estado') else solution[0].get("estado")
         }
 
         response = solucion_client.update_by_key("codigo_solucion", codigo_solucion, payload)

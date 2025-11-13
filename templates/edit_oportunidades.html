@@ -76,10 +76,40 @@
 
                     <div class="mb-3">
                         {{ form.estado.label(class="form-label") }}
-                        {{ form.estado(class="form-select" + (" is-invalid" if form.estado.errors else "")) }}
+                        {{ form.estado(class="form-check-input" + (" is-invalid" if form.estado.errors else "")) }}
                         {% if form.estado.errors %}
                             <div class="invalid-feedback">
                                 {% for error in form.estado.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.archivo_multimedia.label(class="form-label") }}
+                        {{ form.archivo_multimedia(class="form-control" + (" is-invalid" if form.archivo_multimedia.errors else "")) }}
+                        {% if form.archivo_multimedia.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.archivo_multimedia.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.tipo_innovacion.label(class="form-label") }}
+                        {{ form.tipo_innovacion(class="form-control" + (" is-invalid" if form.tipo_innovacion.errors else "")) }}
+                        {% if form.tipo_innovacion.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.tipo_innovacion.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.foco_innovacion.label(class="form-label") }}
+                        {{ form.foco_innovacion(class="form-control" + (" is-invalid" if form.foco_innovacion.errors else "")) }}
+                        {% if form.foco_innovacion.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.foco_innovacion.errors %}{{ error }}{% endfor %}
                             </div>
                         {% endif %}
                     </div>

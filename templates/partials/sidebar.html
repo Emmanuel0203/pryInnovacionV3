@@ -7,18 +7,22 @@
                             <ul class="metismenu list-unstyled" id="side-menu">
                                 <li class="menu-title">Main</li>
         
+                                {% set _roles = session.get('user_roles', []) %}
+                                {% if ('Usuario' not in _roles) or session.get('is_admin') %}
                                 <li id="dashboard_li">
                                     <a href="{{ url_for('dashboard.index') }}" class="waves-effect" id="dashboard_anchor">
                                         <i class="mdi mdi-view-dashboard"></i>
                                         <span>Dashboard</span>
                                     </a>
                                 </li>
+                                {% endif %}
                                 <li id="logoanalitica_li">
                                     <a href="http://190.217.58.246/" class="waves-effect" id="logoanalitica_li_anchor">
                                         <i class="mdi mdi-view-dashboard"></i>
                                         <span>Análitica Usbmed</span>
                                     </a>
                                 </li>
+                                {% if ('Usuario' not in _roles) or session.get('is_admin') %}
                                 <li id="proyectos_li">
                                     <a href="{{ url_for('dashboard.proyectos') }}" class="waves-effect" id="proyectos_anchor">
                                         <i class="mdi mdi-briefcase"></i>
@@ -26,6 +30,7 @@
                                         
                                     </a>
                                 </li>
+                                {% endif %}
                                 
 
 
@@ -93,8 +98,8 @@
                                         <span> Authentication </span>
                                     </a>
                                     <ul class="sub-menu mm-collapse" aria-expanded="false">
-                                        <li><a target="_blank" href="/perfil/">Login</a></li>
-                                        <li><a target="_blank" href="#">Register</a></li>
+                                        <li><a href="{{ url_for('login.logout') }}">Log out</a></li>
+                                        <li><a href="{{ url_for('register.register_view') }}">Register</a></li>
                                         <li><a target="_blank" href="#">Recover Password</a></li>
                                     </ul>
                                 </li>

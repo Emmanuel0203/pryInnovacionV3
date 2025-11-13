@@ -28,15 +28,29 @@
                 <form method="get" action="{{ url_for('vistaSolucion.list_solucion') }}">
                     <div class="row mb-4">
                         <div class="col-md-3">
-                            {{ form.tipo_innovacion.label(class="form-label") }}
-                            {{ form.tipo_innovacion(class="form-control") }}
+                            <label for="tipo_innovacion" class="form-label">Tipo de Innovación</label>
+                            <select id="tipo_innovacion" name="tipo_innovacion" class="form-control">
+                                <option value="">-- Todos --</option>
+                                {% for value, label in form.tipo_innovacion.choices %}
+                                    {% if value != '' %}
+                                        <option value="{{ value }}" {% if selected_tipo == value|string %}selected{% endif %}>{{ label }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
                         </div>
                         <div class="col-md-3">
-                            {{ form.foco_innovacion.label(class="form-label") }}
-                            {{ form.foco_innovacion(class="form-control") }}
+                            <label for="foco_innovacion" class="form-label">Foco de Innovación</label>
+                            <select id="foco_innovacion" name="foco_innovacion" class="form-control">
+                                <option value="">-- Todos --</option>
+                                {% for value, label in form.foco_innovacion.choices %}
+                                    {% if value != '' %}
+                                        <option value="{{ value }}" {% if selected_foco == value|string %}selected{% endif %}>{{ label }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
                         </div>
                         <div class="col-md-3">
-                            <label for="estado">Estado</label>
+                            <label for="estado" class="form-label">Estado</label>
                             <select id="estado" name="estado" class="form-control">
                                 <option value="">-- Todos --</option>
                                 <option value="True" {% if selected_estado == 'True' %}selected{% endif %}>Aprobada</option>
@@ -44,7 +58,8 @@
                             </select>
                         </div>
                         <div class="col-md-3 d-flex align-items-end">
-                            <button type="submit" class="btn btn-primary">Aplicar Filtros</button>
+                            <button type="submit" class="btn btn-primary me-2">Aplicar Filtros</button>
+                            <a href="{{ url_for('vistaSolucion.list_solucion') }}" class="btn btn-secondary">Limpiar</a>
                         </div>
                     </div>
                 </form>

@@ -1,7 +1,7 @@
 # views/auth.py
 from flask import Blueprint, request, render_template, redirect, url_for, flash
 from flask_login import login_user
-from utils.api_client import APIClient
+from utils.api_client import APIClient, get_api_client
 from werkzeug.security import check_password_hash
 from models.Usuario import Usuario
 
@@ -13,7 +13,7 @@ def login():
         email = request.form["email"]
         password = request.form["password"]
 
-        client = APIClient("usuario")
+        client = get_api_client("usuario")
         result = client.get_data(where_condition=f"email = '{email}'")
 
         if result:
