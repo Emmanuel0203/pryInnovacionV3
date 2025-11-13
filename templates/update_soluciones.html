@@ -1,72 +1,107 @@
 {% extends "base.html" %}
-
-{% block head %}
-<!-- Cargar estilos específicos para el Datepicker -->
-<link href="{{ url_for('static', filename='libs/bootstrap-datepicker/css/bootstrap-datepicker.min.css') }}" rel="stylesheet">
-{% endblock head %}
+{% block title %}Editar Solución{% endblock %}
 
 {% block content %}
-<!-- Título de la página -->
-<div class="row">
-    <div class="col-sm-6">
-        <div class="page-title-box">
-            <h4>Editar Solución</h4>
+<div class="container mt-4">
+    <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Editar Solución</h5>
         </div>
-    </div>
-</div>
+        <div class="card-body">
+            <form method="POST" enctype="multipart/form-data">
+                {{ form.hidden_tag() }}
 
-<!-- Formulario de edición de solución -->
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body">
-                <h4 class="card-title">Actualizar Información</h4>
-                <p class="card-title-desc">Modifique la información de la solución</p>
+                <!-- ===================== -->
+                <!-- Título -->
+                <!-- ===================== -->
+                <div class="mb-3">
+                    <label for="titulo" class="form-label fw-semibold">Título</label>
+                    {{ form.titulo(class="form-control", placeholder="Ingresa el título de la solución") }}
+                    {% if form.titulo.errors %}
+                        <div class="text-danger small">{{ form.titulo.errors[0] }}</div>
+                    {% endif %}
+                </div>
 
-                <!-- Formulario para editar -->
-                <form method="POST" enctype="multipart/form-data">
-                    {{ form.hidden_tag() }}  <!-- Incluye CSRF y campos ocultos -->
+                <!-- ===================== -->
+                <!-- Descripción -->
+                <!-- ===================== -->
+                <div class="mb-3">
+                    <label for="descripcion" class="form-label fw-semibold">Descripción</label>
+                    {{ form.descripcion(class="form-control", rows="4", placeholder="Describe brevemente la solución") }}
+                    {% if form.descripcion.errors %}
+                        <div class="text-danger small">{{ form.descripcion.errors[0] }}</div>
+                    {% endif %}
+                </div>
 
-                    <!-- Renderizado con Flask-WTF (sin crispy) -->
-                    {% for field in form %}
-                        <div class="form-group">
-                            {{ field.label(class="form-label") }}
-                            {{ field(class="form-control") }}
-                            {% if field.errors %}
-                                <ul class="text-danger">
-                                    {% for error in field.errors %}
-                                        <li>{{ error }}</li>
-                                    {% endfor %}
-                                </ul>
-                            {% endif %}
-                        </div>
-                    {% endfor %}
+                <!-- ===================== -->
+                <!-- Tipo de innovación -->
+                <!-- ===================== -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Tipo de innovación</label>
+                    {{ form.tipo_innovacion(class="form-select") }}
+                </div>
 
-                    <!-- Botones -->
-                    <div class="form-group mb-0">
-                        <div>
-                            {{ form.submit(class="btn btn-primary float-right") }}
-                            <a href="{{ url_for('vistaSolucion.list_solucion') }}" class="btn btn-light">Regresar</a>
-                        </div>
+                <!-- ===================== -->
+                <!-- Foco de innovación -->
+                <!-- ===================== -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Foco de innovación</label>
+                    {{ form.foco_innovacion(class="form-select") }}
+                </div>
+
+                <!-- ===================== -->
+                <!-- Palabras clave -->
+                <!-- ===================== -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Palabras clave</label>
+                    {{ form.palabras_claves(class="form-control", placeholder="Ejemplo: energía, reciclaje, optimización") }}
+                </div>
+
+                <!-- ===================== -->
+                <!-- Recursos requeridos -->
+                <!-- ===================== -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Recursos requeridos</label>
+                    {{ form.recursos_requeridos(class="form-control", rows="3", placeholder="Describe los recursos necesarios") }}
+                </div>
+
+                <!-- ===================== -->
+                <!-- CREADOR (solo lectura) -->
+                <!-- ===================== -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Creado por</label>
+                    <input type="text" class="form-control" value="{{ solution.creador_por }}" readonly>
+                </div>
+
+                <!-- ===================== -->
+                <!-- ESTADO (checkbox visual) -->
+                <!-- ===================== -->
+                <div class="mb-4">
+                    <div class="form-check d-flex align-items-center gap-2">
+                        {{ form.estado(class="form-check-input", id="estadoCheck") }}
+                        <label for="estadoCheck" class="form-check-label fw-semibold text-success">
+                            Aprobada
+                        </label>
                     </div>
-                </form>
-            </div>
+                    <div class="form-text text-muted">
+                        <i class="mdi mdi-information-outline"></i>
+                        Marca esta casilla para aprobar la idea y publicarla en el mercado.
+                    </div>
+                </div>
+
+                <!-- ===================== -->
+                <!-- BOTONES -->
+                <!-- ===================== -->
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="{{ url_for('vistaSolucion.list_solucion') }}" class="btn btn-outline-secondary">
+                        <i class="mdi mdi-arrow-left"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-success">
+                        <i class="mdi mdi-content-save"></i> Guardar cambios
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
-{% endblock content %}
-
-{% block scripts %}
-<!-- Cargar script para Datepicker -->
-<script src="{{ url_for('static', filename='libs/bootstrap-datepicker/js/bootstrap-datepicker.min.js') }}"></script>
-
-<script>
-    $(function(){
-        $("#id_fecha_creacion").datepicker({
-            autoclose: true,
-            format: 'dd/mm/yyyy',
-            todayHighlight: true
-        }).attr('readonly', 'false');
-    })
-</script>
-{% endblock scripts %}
+{% endblock %}

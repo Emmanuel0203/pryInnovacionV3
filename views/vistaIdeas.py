@@ -159,7 +159,6 @@ def update_idea(codigo_idea):
         flash("Idea no encontrada", "error")
         return redirect(url_for("ideas.list_ideas"))
 
-    
     # ✅ Trabajar con una copia para no modificar el original
     idea_data = solution[0].copy()
     
@@ -207,7 +206,7 @@ def update_idea(codigo_idea):
             "fecha_creacion": form.fecha_creacion.data.strftime("%Y-%m-%d"),
             "archivo_multimedia": solution[0].get("archivo_multimedia"),
             "creador_por": solution[0].get("creador_por"),
-            "estado": solution[0].get("estado")
+            "estado": form.estado.data  # ✅ CAMBIO AQUÍ: Usar el valor del formulario
         }
 
         response = idea_client.update_by_key("codigo_idea", codigo_idea, payload)
@@ -218,7 +217,6 @@ def update_idea(codigo_idea):
         else:
             flash("Error al actualizar la idea", "error")
 
-    # ✅ CAMBIO CLAVE: Pasar idea_data en lugar de solution[0]
     return render_template("update_ideas.html", form=form, idea=idea_data)
 
 
@@ -377,50 +375,49 @@ def estadisticas():
         tipos = idea_client.fetch_endpoint_data("tipo_innovacion") or []
         focos = idea_client.fetch_endpoint_data("foco_innovacion") or []
 
-        tipo_map = {}
-        for t in tipos:
-            tid = t.get("id_tipo_innovacion") or t.get("id") or t.get("id_tipo")
-            tname = t.get("name") or t.get("nombre") or t.get("tipo") or str(tid)
-            if tid is not None:
-                tipo_map[tid] = tname
+        # === Mapas de IDs a nombres ===
+        tipo_map = {
+            t.get("id_tipo_innovacion"): (
+                t.get("name") or t.get("nombre") or t.get("tipo") or str(t.get("id_tipo_innovacion"))
+            )
+            for t in tipos if t.get("id_tipo_innovacion") is not None
+        }
 
-        foco_map = {}
-        for f in focos:
-            fid = f.get("id_foco_innovacion") or f.get("id") or f.get("id_foco")
-            fname = f.get("name") or f.get("nombre") or f.get("foco") or str(fid)
-            if fid is not None:
-                foco_map[fid] = fname
+        foco_map = {
+            f.get("id_foco_innovacion"): (
+                f.get("name") or f.get("nombre") or f.get("foco") or str(f.get("id_foco_innovacion"))
+            )
+            for f in focos if f.get("id_foco_innovacion") is not None
+        }
 
+        # === Funciones auxiliares ===
         def tipo_label(idea):
             for k in ("tipo_innovacion", "tipo_nombre", "tipo", "tipo_name"):
                 v = idea.get(k)
                 if v:
                     return str(v)
-            tid = idea.get("id_tipo_innovacion") or idea.get("tipo_id") or idea.get("id_tipo")
-            if tid is not None and tid in tipo_map:
-                return tipo_map[tid]
-            return "Desconocido"
+            tid = idea.get("id_tipo_innovacion")
+            return tipo_map.get(tid, "Desconocido")
 
         def foco_label(idea):
             for k in ("foco_innovacion", "foco_nombre", "foco", "foco_name"):
                 v = idea.get(k)
                 if v:
                     return str(v)
-            fid = idea.get("id_foco_innovacion") or idea.get("foco_id") or idea.get("id_foco")
-            if fid is not None and fid in foco_map:
-                return foco_map[fid]
-            return "Desconocido"
+            fid = idea.get("id_foco_innovacion")
+            return foco_map.get(fid, "Desconocido")
 
         def is_aprobada(idea):
             e = idea.get("estado")
             if isinstance(e, bool):
-                return bool(e)
+                return e
             if isinstance(e, (int, float)):
                 return int(e) == 1
             if isinstance(e, str):
-                return e.lower() in ("aprobada", "aprobado", "approved", "true", "1", "si", "sí")
+                return e.lower() in ("aprobada", "aprobado", "true", "1", "si", "sí", "approved")
             return False
 
+        # === Cálculos principales ===
         total_ideas = len(ideas)
         ideas_aprobadas = sum(1 for i in ideas if is_aprobada(i))
         ideas_pendientes = total_ideas - ideas_aprobadas
@@ -431,9 +428,12 @@ def estadisticas():
         ideas_por_tipo = sorted(por_tipo.items(), key=lambda x: x[1], reverse=True)
         ideas_por_foco = sorted(por_foco.items(), key=lambda x: x[1], reverse=True)
 
-        creador_key_candidates = lambda idea: idea.get("creador_por") or idea.get("usuario") or idea.get("autor") or idea.get("user_email")
+        creador_key_candidates = lambda idea: (
+            idea.get("creador_por") or idea.get("usuario") or idea.get("autor") or idea.get("user_email")
+        )
         top_generadores = Counter(creador_key_candidates(i) or "Anónimo" for i in ideas).most_common(10)
 
+        # === Renderizar la plantilla ===
         return render_template(
             "templatesIdeas/estadisticas.html",
             total_ideas=total_ideas,
@@ -445,9 +445,26 @@ def estadisticas():
         )
 
     except Exception as e:
-        current_app.logger.exception("Error al generar estadísticas de ideas")
+        import traceback
+        print("🚨 ERROR EN /ideas/estadisticas 🚨")
+        print(traceback.format_exc())
+        current_app.logger.exception(f"Error al generar estadísticas de ideas: {e}")
+
         flash(f"Error al generar estadísticas: {e}", "danger")
-        return redirect(url_for("ideas.list_ideas"))
+
+        print("📊 DEBUG ideas:", ideas)
+
+
+        # No redirige al listar — se queda en la misma página mostrando vacíos
+        return render_template("estadisticas_ideas.html",
+            total_ideas=total_ideas,
+            ideas_aprobadas=ideas_aprobadas,
+            ideas_pendientes=ideas_pendientes,
+            ideas_por_tipo=ideas_por_tipo,
+            ideas_por_foco=ideas_por_foco,
+            top_generadores=top_generadores
+        )
+
 
 
 @ideas_bp.route("/retos", methods=["GET"])
@@ -521,10 +538,25 @@ def evaluacion():
 @ideas_bp.route("/mercado", methods=["GET"])
 @login_required
 def mercado():
+    """Mercado de ideas - solo muestra ideas aprobadas"""
     try:
         ideas_mercado = idea_client.get_all() or []
-
+        
+        # ✅ FILTRAR SOLO APROBADAS (estado = True)
+        ideas_mercado = [i for i in ideas_mercado if i.get('estado') == True]
+        
+        focos_tipos = {
+            "focos": idea_client.fetch_endpoint_data("foco_innovacion"),
+            "tipos": idea_client.fetch_endpoint_data("tipo_innovacion")
+        }
+        
+        foco_map = {f['id_foco_innovacion']: f['name'] for f in focos_tipos['focos']}
+        tipo_map = {t['id_tipo_innovacion']: t['name'] for t in focos_tipos['tipos']}
+        
         for idea in ideas_mercado:
+            idea['foco_innovacion_nombre'] = foco_map.get(idea['id_foco_innovacion'], 'Desconocido')
+            idea['tipo_innovacion_nombre'] = tipo_map.get(idea['id_tipo_innovacion'], 'Desconocido')
+            
             fecha = idea.get("fecha_creacion")
             if isinstance(fecha, str):
                 try:
@@ -533,10 +565,13 @@ def mercado():
                     idea["fecha_creacion"] = None
             elif fecha is None:
                 idea["fecha_creacion"] = None
-
+                
     except Exception as e:
         current_app.logger.exception("Error al obtener ideas para el mercado")
         flash(f"Error al obtener ideas del mercado: {e}", "danger")
         ideas_mercado = []
-
-    return render_template("mercado_ideas.html", ideas_mercado=ideas_mercado)
+    
+    return render_template(
+        "mercado_ideas.html",
+        ideas_mercado=ideas_mercado
+    )

@@ -69,12 +69,22 @@ def list_solucion():
 @soluciones_bp.route("/<int:codigo_solucion>", methods=["GET"])
 @login_required
 def get_solucion(codigo_solucion):
+    # ✅ AGREGAR DEBUG
+    current_app.logger.info(f"🔍 Solicitando solución con código: {codigo_solucion}")
+    
     solution = solucion_client.get_by_id("codigo_solucion", codigo_solucion)
+    
+    # ✅ AGREGAR DEBUG
+    current_app.logger.info(f"📦 Solución recibida: {solution}")
+    
     if not solution:
         flash("Solución no encontrada", "error")
         return redirect(url_for("vistaSolucion.list_solucion"))
     
-    # ✅ AGREGAR ESTO: Obtener nombres de tipo y foco
+    # ✅ AGREGAR DEBUG
+    current_app.logger.info(f"📊 Código de la solución obtenida: {solution[0].get('codigo_solucion')}")
+    
+    # Obtener nombres de tipo y foco
     try:
         focos_tipos = {
             "focos": solucion_client.fetch_endpoint_data("foco_innovacion"),
@@ -84,7 +94,6 @@ def get_solucion(codigo_solucion):
         foco_map = {f['id_foco_innovacion']: f['name'] for f in focos_tipos['focos']}
         tipo_map = {t['id_tipo_innovacion']: t['name'] for t in focos_tipos['tipos']}
         
-        # Agregar los nombres al objeto solución
         solution[0]['tipo_innovacion_nombre'] = tipo_map.get(solution[0]['id_tipo_innovacion'], 'Desconocido')
         solution[0]['foco_innovacion_nombre'] = foco_map.get(solution[0]['id_foco_innovacion'], 'Desconocido')
     except Exception as e:
@@ -181,16 +190,35 @@ def create_solucion():
     return render_template("create_soluciones.html", form=form)
 
 
-
+# ================================================
+# 🧩 EDITAR SOLUCIÓN (UPDATE)
+# ================================================
 @soluciones_bp.route("/update/<int:codigo_solucion>", methods=["GET", "POST"])
 @login_required
 def update_solucion(codigo_solucion):
-    solution = solucion_client.get_by_key("codigo_solucion", codigo_solucion)
+    # ============================
+    # 1️⃣ Obtener solución actual
+    # ============================
+    solution_response = solucion_client.get_by_key("codigo_solucion", codigo_solucion)
+    current_app.logger.debug(f"[DEBUG] Respuesta bruta de API: {solution_response}")
+
+    # Manejar distintas formas de respuesta
+    if isinstance(solution_response, dict):
+        solution = solution_response.get("data", [])
+    elif isinstance(solution_response, list):
+        solution = solution_response
+    else:
+        solution = []
+
     if not solution:
         flash("Solución no encontrada", "error")
         return redirect(url_for("vistaSolucion.list_solucion"))
 
-    # Cargar opciones dinámicas desde la API
+    solution = solution[0]  # tomamos el primer registro
+
+    # ============================
+    # 2️⃣ Cargar opciones dinámicas
+    # ============================
     try:
         focos_tipos = {
             "focos": solucion_client.fetch_endpoint_data("foco_innovacion"),
@@ -198,16 +226,25 @@ def update_solucion(codigo_solucion):
         }
     except Exception as e:
         current_app.logger.exception("Error al cargar opciones dinámicas")
-        focos_tipos = {
-            "focos": [],
-            "tipos": []
-        }
+        focos_tipos = {"focos": [], "tipos": []}
 
-    form = SolucionForm(data=solution[0])
-    form.foco_innovacion.choices = [(f['id_foco_innovacion'], f['name']) for f in focos_tipos['focos']]
-    form.tipo_innovacion.choices = [(t['id_tipo_innovacion'], t['name']) for t in focos_tipos['tipos']]
+    # ============================
+    # 3️⃣ Inicializar formulario
+    # ============================
+    form = SolucionForm(data=solution)
+    form.foco_innovacion.choices = [
+        (f['id_foco_innovacion'], f['name']) for f in focos_tipos['focos']
+    ]
+    form.tipo_innovacion.choices = [
+        (t['id_tipo_innovacion'], t['name']) for t in focos_tipos['tipos']
+    ]
 
+    # ============================
+    # 4️⃣ Procesar formulario
+    # ============================
     if request.method == "POST" and form.validate_on_submit():
+        current_app.logger.debug(f"[DEBUG] Estado del form: {form.estado.data}")
+
         payload = {
             "id_tipo_innovacion": form.tipo_innovacion.data,
             "id_foco_innovacion": form.foco_innovacion.data,
@@ -215,23 +252,32 @@ def update_solucion(codigo_solucion):
             "descripcion": form.descripcion.data,
             "palabras_claves": form.palabras_claves.data,
             "recursos_requeridos": form.recursos_requeridos.data,
-            "archivo_multimedia": None,
-            "creador_por": solution[0].get("creador_por"),
-            "desarrollador_por": solution[0].get("desarrollador_por"),
-            "area_unidad_desarrollo": solution[0].get("area_unidad_desarrollo"),
-            "estado": solution[0].get("estado")
+            "archivo_multimedia": solution.get("archivo_multimedia"),
+            "creador_por": solution.get("creador_por"),
+            "desarrollador_por": solution.get("desarrollador_por"),
+            "area_unidad_desarrollo": solution.get("area_unidad_desarrollo"),
+            "estado": True if form.estado.data else False
         }
+
+        current_app.logger.debug(f"[DEBUG] Payload enviado a API: {payload}")
 
         response = solucion_client.update_by_key("codigo_solucion", codigo_solucion, payload)
 
-        if response and response.get("estado") == 200:
-            flash("Solución actualizada correctamente", "success")
+        # ============================
+        # 5️⃣ Validar respuesta y redirigir
+        # ============================
+        if response and response.get("status_code") in [200, 201]:
+            flash("✅ Solución actualizada correctamente", "success")
             return redirect(url_for("vistaSolucion.list_solucion"))
         else:
-            flash("Error al actualizar la solución", "error")
+            current_app.logger.error(f"❌ Error al actualizar solución: {response}")
+            flash("❌ Error al actualizar la solución", "error")
+            return redirect(url_for("vistaSolucion.list_solucion"))  # 🔁 redirige igual aunque falle
 
-    return render_template("update_soluciones.html", form=form, solution=solution[0])
-
+    # ============================
+    # 6️⃣ Renderizar plantilla (solo si GET)
+    # ============================
+    return render_template("update_soluciones.html", form=form, solution=solution)
 
 
 @soluciones_bp.route("/delete/<int:codigo_solucion>", methods=["GET", "POST"])
@@ -259,10 +305,36 @@ def delete_solucion(codigo_solucion):
 @soluciones_bp.route("/detail/<int:codigo_solucion>", methods=["GET"])
 @login_required
 def detail_solucion(codigo_solucion):
-    solution = solucion_client.get_by_id("codigo_solucion", codigo_solucion)
-    if not solution:
+    """Vista para ver detalles de una solución con tipo y foco de innovación"""
+    
+    # ✅ CAMBIO: usar get_by_key en lugar de get_by_id
+    solution = solucion_client.get_by_key("codigo_solucion", codigo_solucion)
+    
+    # ✅ AGREGAR DEBUG
+    current_app.logger.info(f"🔍 Buscando solución con código: {codigo_solucion}")
+    current_app.logger.info(f"📦 Solución encontrada: {solution}")
+    
+    if not solution or len(solution) == 0:
         flash("Solución no encontrada", "error")
         return redirect(url_for("vistaSolucion.list_solucion"))
+    
+    # ✅ Obtener nombres de tipo y foco
+    try:
+        focos_tipos = {
+            "focos": solucion_client.fetch_endpoint_data("foco_innovacion"),
+            "tipos": solucion_client.fetch_endpoint_data("tipo_innovacion")
+        }
+        
+        foco_map = {f['id_foco_innovacion']: f['name'] for f in focos_tipos['focos']}
+        tipo_map = {t['id_tipo_innovacion']: t['name'] for t in focos_tipos['tipos']}
+        
+        solution[0]['tipo_innovacion_nombre'] = tipo_map.get(solution[0]['id_tipo_innovacion'], 'Desconocido')
+        solution[0]['foco_innovacion_nombre'] = foco_map.get(solution[0]['id_foco_innovacion'], 'Desconocido')
+        
+        current_app.logger.info(f"✅ Código de solución procesado: {solution[0].get('codigo_solucion')}")
+    except Exception as e:
+        current_app.logger.error(f"❌ Error al obtener nombres de tipo/foco: {e}")
+    
     return render_template("detail_soluciones.html", solucion=solution[0])
 
 

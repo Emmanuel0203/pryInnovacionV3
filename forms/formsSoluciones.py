@@ -1,15 +1,14 @@
 # forms/formsSoluciones/formsSoluciones.py
 from flask_wtf import FlaskForm
-from wtforms import StringField, TextAreaField, SelectField, FileField, IntegerField, SubmitField
+from wtforms import StringField, TextAreaField, SelectField, FileField, IntegerField, SubmitField, BooleanField
 from wtforms.validators import DataRequired, Length
 from flask_wtf.file import FileAllowed
 
 class SolucionForm(FlaskForm):
     """
     Formulario de Solución. 
-    Se encarga únicamente de definir los campos y validaciones.
-    Las opciones de los select son cargadas dinámicamente
-    desde la vista usando el servicio.
+    Define los campos, validaciones y permite cargar dinámicamente
+    las opciones de los campos select desde la vista.
     """
 
     titulo = StringField('Título', validators=[
@@ -40,25 +39,29 @@ class SolucionForm(FlaskForm):
     ])
 
     archivo_multimedia = FileField('Archivo', validators=[
-        FileAllowed(['jpg', 'jpeg', 'png', 'pdf'], 'Solo imágenes o documentos.')
+        FileAllowed(['jpg', 'jpeg', 'png', 'pdf'], 'Solo imágenes o documentos PDF.')
     ])
     
-    submit = SubmitField('Guardar')
-    
-    def load_dynamic_choices(self, focos, tipos):
-        """
-        Load dynamic choices for the form fields.
+    creador_por = StringField('Creado Por', validators=[
+        Length(max=50, message='El nombre del creador no debe exceder los 50 caracteres')
+    ])
 
-        Parameters
-        ----------
-        focos : list
-            List of focus options fetched from the API.
-        tipos : list
-            List of innovation types fetched from the API.
+    estado = BooleanField("Estado (Aprobado)", default=False)
+
+
+    submit = SubmitField('Guardar')
+
+    def load_dynamic_choices(self, focos, tipos, selected_foco=None, selected_tipo=None):
+        """
+        Carga las opciones dinámicamente para los campos de selección.
         """
         self.foco_innovacion.choices = [(f['id_foco_innovacion'], f['name']) for f in focos]
         self.tipo_innovacion.choices = [(t['id_tipo_innovacion'], t['name']) for t in tipos]
 
-        # Log the choices for debugging
-        print(f"Foco Innovacion Choices: {self.foco_innovacion.choices}")
-        print(f"Tipo Innovacion Choices: {self.tipo_innovacion.choices}")
+        if selected_foco:
+            self.foco_innovacion.data = selected_foco
+        if selected_tipo:
+            self.tipo_innovacion.data = selected_tipo
+
+        print(f"[DEBUG] Foco Innovacion Choices: {self.foco_innovacion.choices}")
+        print(f"[DEBUG] Tipo Innovacion Choices: {self.tipo_innovacion.choices}")

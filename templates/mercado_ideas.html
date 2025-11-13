@@ -1,53 +1,107 @@
 {% extends "base.html" %}
 
+{% block title %}Mercado de Ideas{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <h2>Mercado de Ideas</h2>
-    
+<div class="container-fluid">
     <div class="row">
-        {% for idea in ideas_mercado %}
-        <div class="col-md-4 mb-4">
-            <div class="card h-100">
-                {% if idea.imagen_url %}
-                <img src="{{ url_for('static', filename=idea.imagen_url) }}" class="card-img-top" alt="{{ idea.titulo }}">
-                {% endif %}
-                <div class="card-body">
-                    <h5 class="card-title">{{ idea.titulo }}</h5>
-                    <p class="card-text">{{ idea.descripcion|truncate(150) }}</p>
-                    <div class="card-text">
-                        <small class="text-muted">
-                            Creado por: {{ idea.creador_por }}<br>
-                            Fecha: 
-                            {% if idea.fecha_creacion %}
-                                {{ idea.fecha_creacion.strftime('%d/%m/%Y') }}
-                            {% else %}
-                                No disponible
-                            {% endif %}
-                        </small>
-                    </div>
-                    <hr>
-                    <div class="mt-2">
-                        <span class="badge bg-success">Aprobada</span>
-                        {% if idea.tipo_innovacion %}
-                        <span class="badge bg-info">{{ idea.tipo_innovacion.nombre }}</span>
-                        {% endif %}
-                        {% if idea.foco_innovacion %}
-                        <span class="badge bg-warning">{{ idea.foco_innovacion.nombre }}</span>
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="card-footer">
-                    <a href="{{ url_for('ideas.get_idea', codigo_idea=idea.codigo_idea) }}" class="btn btn-primary">Ver Detalles</a>
-                </div>
+        <div class="col-12">
+            <div class="page-title-box">
+                <h4 class="page-title">🛒 Mercado de Ideas</h4>
+                <p class="text-muted">Explora las ideas aprobadas de innovación</p>
             </div>
         </div>
-        {% endfor %}
     </div>
 
-    {% if not ideas_mercado %}
-    <div class="alert alert-info" role="alert">
-        No hay ideas disponibles en el mercado.
+    <!-- Botón volver -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <a href="{{ url_for('ideas.list_ideas') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Volver a Ideas
+            </a>
+        </div>
     </div>
-    {% endif %}
+
+    <!-- Cards de Ideas -->
+    <div class="row">
+        {% if ideas_mercado %}
+            {% for idea in ideas_mercado %}
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-sm hover-shadow">
+                    <!-- Imagen o placeholder -->
+                    {% if idea.imagen_url %}
+                    <img src="{{ url_for('static', filename=idea.imagen_url) }}" class="card-img-top" alt="{{ idea.titulo }}" style="height: 200px; object-fit: cover;">
+                    {% else %}
+                    <div class="card-img-top" style="height: 200px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
+                    {% endif %}
+                    
+                    <!-- Contenido -->
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title text-primary">{{ idea.titulo }}</h5>
+                        <p class="card-text text-muted flex-grow-1">
+                            {{ idea.descripcion[:150] }}{% if idea.descripcion|length > 150 %}...{% endif %}
+                        </p>
+                        
+                        <!-- Información del creador -->
+                        <div class="mb-3">
+                            <small class="text-muted">
+                                <i class="fas fa-user me-1"></i>
+                                <strong>Creado por:</strong> {{ idea.creador_por }}<br>
+                                <i class="fas fa-calendar me-1"></i>
+                                <strong>Fecha:</strong>
+                                {% if idea.fecha_creacion %}
+                                    {{ idea.fecha_creacion.strftime("%d/%m/%Y") }}
+                                {% else %}
+                                    No disponible
+                                {% endif %}
+                            </small>
+                        </div>
+                        
+                        <hr class="my-2">
+                        
+                        <!-- Badges -->
+                        <div class="mb-2">
+                            <span class="badge bg-success me-1">
+                                <i class="fas fa-check-circle me-1"></i>Aprobada
+                            </span>
+                            {% if idea.tipo_innovacion_nombre %}
+                            <span class="badge bg-info me-1">{{ idea.tipo_innovacion_nombre }}</span>
+                            {% endif %}
+                            {% if idea.foco_innovacion_nombre %}
+                            <span class="badge bg-warning text-dark">{{ idea.foco_innovacion_nombre }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Footer con botón -->
+                    <div class="card-footer bg-transparent border-top-0">
+                        <a href="{{ url_for('ideas.get_idea', codigo_idea=idea.codigo_idea) }}" 
+                           class="btn btn-primary w-100">
+                            <i class="fas fa-eye me-1"></i> Ver Detalles
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="alert alert-info text-center py-5" role="alert">
+                    <i class="fas fa-inbox fa-3x mb-3 d-block text-info"></i>
+                    <h5>No hay ideas disponibles en el mercado</h5>
+                    <p class="mb-0">Las ideas aprobadas aparecerán aquí para que todos puedan explorarlas.</p>
+                </div>
+            </div>
+        {% endif %}
+    </div>
 </div>
+
+<style>
+    .hover-shadow {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .hover-shadow:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
+    }
+</style>
 {% endblock %}
